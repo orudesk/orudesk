@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: orudesk
+
+  # Load a local .env file if there is one (optional: production has no file).
+  # [.properties] tells Spring to read it as KEY=value lines.
+  config:
+    import: optional:file:.env[.properties]
+
+  datasource:
+    url: jdbc:mariadb://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:orudesk}
+    username: ${DB_USERNAME:orudesk_app}
+    password: ${DB_PASSWORD}             # no default on purpose: must be provided
+
+  jpa:
+    hibernate:
+      ddl-auto: none                     # Flyway owns the schema, never Hibernate
+    open-in-view: false
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+server:
+  port: ${SERVER_PORT:8080}

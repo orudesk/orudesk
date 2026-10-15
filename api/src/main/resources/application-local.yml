@@ -1,0 +1,8 @@
+management:
+  endpoint:
+    health:
+      show-details: always    # show db/redis details; production hides them
+
+spring:
+  jpa:
+    show-sql: true            # print SQL to the console while learning
