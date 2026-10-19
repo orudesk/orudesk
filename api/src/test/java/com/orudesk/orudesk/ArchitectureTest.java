@@ -25,6 +25,5 @@ class ArchitectureTest {
     static final ArchRule applicationDoesNotKnowAdapters = noClasses()
             .that().resideInAPackage("..application..")
             .should().dependOnClassesThat().resideInAPackage("..adapter..")
-            .because("use cases talk to the outside world only through ports (interfaces)")
-            .allowEmptyShould(true);
+            .because("use cases talk to the outside world only through ports (interfaces)");
 }
