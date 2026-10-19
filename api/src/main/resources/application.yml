@@ -14,7 +14,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: none                     # Flyway owns the schema, never Hibernate
+      ddl-auto: validate                     # Flyway owns the schema, never Hibernate
     open-in-view: false
 
   data:
