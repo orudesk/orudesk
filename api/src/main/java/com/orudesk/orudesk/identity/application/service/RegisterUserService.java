@@ -8,7 +8,11 @@ import com.orudesk.orudesk.identity.application.port.out.SaveUserPort;
 import com.orudesk.orudesk.identity.domain.EmailAlreadyRegisteredException;
 import com.orudesk.orudesk.identity.domain.User;
 import com.orudesk.orudesk.identity.domain.UserId;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+@Service
+@Transactional
 public class RegisterUserService implements RegisterUserUseCase {
 
     private final LoadUserPort loadUserPort;

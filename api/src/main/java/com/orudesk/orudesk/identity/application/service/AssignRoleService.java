@@ -9,7 +9,11 @@ import com.orudesk.orudesk.identity.domain.UnknownRoleException;
 import com.orudesk.orudesk.identity.domain.User;
 import com.orudesk.orudesk.identity.domain.UserId;
 import com.orudesk.orudesk.identity.domain.UserNotFoundException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+@Service
+@Transactional
 public class AssignRoleService implements AssignRoleUseCase {
 
     private final LoadUserPort loadUserPort;

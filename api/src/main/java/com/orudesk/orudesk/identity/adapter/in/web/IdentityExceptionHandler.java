@@ -1,0 +1,35 @@
+package com.orudesk.orudesk.identity.adapter.in.web;
+
+import com.orudesk.orudesk.identity.domain.EmailAlreadyRegisteredException;
+import com.orudesk.orudesk.identity.domain.UnknownRoleException;
+import com.orudesk.orudesk.identity.domain.UserNotFoundException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+/** Turns identity's business exceptions into RFC 9457 "problem detail" JSON responses. */
+@RestControllerAdvice
+class IdentityExceptionHandler {
+
+    @ExceptionHandler(EmailAlreadyRegisteredException.class)
+    ProblemDetail emailTaken(EmailAlreadyRegisteredException e) {
+        return problem(HttpStatus.CONFLICT, "Email already registered", e.getMessage());
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    ProblemDetail userNotFound(UserNotFoundException e) {
+        return problem(HttpStatus.NOT_FOUND, "User not found", e.getMessage());
+    }
+
+    @ExceptionHandler(UnknownRoleException.class)
+    ProblemDetail unknownRole(UnknownRoleException e) {
+        return problem(HttpStatus.BAD_REQUEST, "Unknown role", e.getMessage());
+    }
+
+    private static ProblemDetail problem(HttpStatus status, String title, String detail) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
+        problem.setTitle(title);
+        return problem;
+    }
+}
