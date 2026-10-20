@@ -38,4 +38,9 @@ class InMemoryUserStore implements LoadUserPort, SaveUserPort, LoadRolePort {
     public boolean roleExists(RoleCode code) {
         return roles.contains(code);
     }
+
+    @Override
+    public Optional<User> findByEmail(Email email) {
+        return users.values().stream().filter(user -> user.email().equals(email)).findFirst();
+    }
 }

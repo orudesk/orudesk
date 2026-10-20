@@ -23,8 +23,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/** Tests only the web layer: JSON in, status and JSON out. The use case is a Mockito mock. */
+import com.orudesk.orudesk.shared.adapter.in.security.SecurityConfig;
+import org.springframework.context.annotation.Import;
+
 @WebMvcTest(AuthController.class)
+@Import(SecurityConfig.class)
 class AuthControllerTest {
 
     @Autowired

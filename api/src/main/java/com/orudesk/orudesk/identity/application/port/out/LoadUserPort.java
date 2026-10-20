@@ -11,4 +11,5 @@ public interface LoadUserPort {
     Optional<User> findById(UserId id);
 
     boolean existsByEmail(Email email);
+    Optional<User> findByEmail(Email email);
 }

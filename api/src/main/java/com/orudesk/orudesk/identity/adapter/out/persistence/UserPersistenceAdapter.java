@@ -56,6 +56,12 @@ class UserPersistenceAdapter implements LoadUserPort, SaveUserPort, LoadRolePort
         return roles.existsByCode(code.value());
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<User> findByEmail(Email email) {
+        return users.findWithRolesByEmail(email.value()).map(this::toDomain);
+    }
+
     private User toDomain(UserJpaEntity entity) {
         Set<RoleCode> roleCodes = entity.getRoles().stream()
                 .map(role -> new RoleCode(role.getCode()))

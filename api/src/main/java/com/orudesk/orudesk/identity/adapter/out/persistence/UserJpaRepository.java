@@ -13,4 +13,7 @@ interface UserJpaRepository extends JpaRepository<UserJpaEntity, UUID> {
     /** Loads the user and its roles in one query (a JOIN), instead of one query each. */
     @EntityGraph(attributePaths = "roles")
     Optional<UserJpaEntity> findWithRolesById(UUID id);
+
+    @EntityGraph(attributePaths = "roles")
+    Optional<UserJpaEntity> findWithRolesByEmail(String email);
 }

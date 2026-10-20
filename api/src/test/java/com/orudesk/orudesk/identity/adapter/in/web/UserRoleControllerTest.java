@@ -19,8 +19,16 @@ import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import com.orudesk.orudesk.shared.adapter.in.security.SecurityConfig;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.test.context.support.WithMockUser;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 
 @WebMvcTest(UserRoleController.class)
+@Import(SecurityConfig.class)
+@WithMockUser(roles = "ADMIN")   // every test runs as a logged-in ADMIN, unless it says otherwise
 class UserRoleControllerTest {
 
     private static final UUID USER_ID = UUID.fromString("22222222-2222-2222-2222-222222222222");
@@ -80,5 +88,18 @@ class UserRoleControllerTest {
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.title").value("Invalid input"));
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void returns403ForAUserWhoIsNotAnAdmin() throws Exception {
+        mockMvc.perform(post("/api/v1/users/{id}/roles", USER_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"role": "ADMIN"}
+                                """))
+                .andExpect(status().isForbidden());
+
+        verify(assignRole, never()).assignRole(any(), any());
     }
 }
