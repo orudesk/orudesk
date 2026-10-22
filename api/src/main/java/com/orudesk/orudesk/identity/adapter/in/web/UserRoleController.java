@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/v1/users")
@@ -25,6 +26,7 @@ class UserRoleController {
     }
 
     @PostMapping("/{userId}/roles")
+    @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void assignRole(@PathVariable UUID userId, @Valid @RequestBody AssignRoleRequest request) {
         assignRole.assignRole(new UserId(userId), new RoleCode(request.role()));

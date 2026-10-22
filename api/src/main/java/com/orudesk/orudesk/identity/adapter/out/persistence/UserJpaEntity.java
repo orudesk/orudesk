@@ -11,6 +11,7 @@ import jakarta.persistence.Table;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import org.hibernate.annotations.TenantId;
 
 /** One row of iam_user, plus its roles through the iam_user_role join table. */
 @Entity
@@ -20,7 +21,8 @@ class UserJpaEntity {
     @Id
     private UUID id;
 
-    @Column(name = "tenant_id", nullable = false)
+    @TenantId   // Hibernate filters every query by this column and fills it on insert
+    @Column(name = "tenant_id", nullable = false, updatable = false)
     private UUID tenantId;
 
     @Column(nullable = false, unique = true, length = 320)

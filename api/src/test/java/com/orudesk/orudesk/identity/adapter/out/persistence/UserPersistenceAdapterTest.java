@@ -1,10 +1,7 @@
 package com.orudesk.orudesk.identity.adapter.out.persistence;
 
-import com.orudesk.orudesk.identity.domain.Email;
-import com.orudesk.orudesk.identity.domain.PasswordHash;
-import com.orudesk.orudesk.identity.domain.RoleCode;
-import com.orudesk.orudesk.identity.domain.TenantId;
-import com.orudesk.orudesk.identity.domain.User;
+import com.orudesk.orudesk.identity.domain.*;
+import com.orudesk.orudesk.shared.adapter.out.persistence.CurrentTenantResolver;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,13 +13,9 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Runs against your local MariaDB (Flyway creates the tables first).
- * Each test runs in a transaction that is rolled back at the end, so nothing is left behind.
- */
+@Import({UserPersistenceAdapter.class, CurrentTenantResolver.class})
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import(UserPersistenceAdapter.class)
 class UserPersistenceAdapterTest {
 
     private static final TenantId DEMO = new TenantId(UUID.fromString("00000000-0000-0000-0000-000000000001"));

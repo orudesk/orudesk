@@ -22,9 +22,10 @@ import org.springframework.security.web.SecurityFilterChain;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 
-/** Who may call which URL, and how a request proves who it is: a JWT in the Authorization header. */
 @Configuration
+@EnableMethodSecurity   // turns on @PreAuthorize
 public class SecurityConfig {
 
     private static final String ISSUER = "orudesk";
@@ -50,7 +51,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST,
                                 "/api/v1/auth/register", "/api/v1/auth/login",
                                 "/api/v1/auth/refresh", "/api/v1/auth/logout").permitAll()
-                        .requestMatchers("/api/v1/users/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(rolesFromJwt())));
