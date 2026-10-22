@@ -1,6 +1,8 @@
 package com.orudesk.orudesk.identity.adapter.in.web;
 
 import com.orudesk.orudesk.identity.domain.EmailAlreadyRegisteredException;
+import com.orudesk.orudesk.identity.domain.InvalidCredentialsException;
+import com.orudesk.orudesk.identity.domain.InvalidRefreshTokenException;
 import com.orudesk.orudesk.identity.domain.UnknownRoleException;
 import com.orudesk.orudesk.identity.domain.UserNotFoundException;
 import org.springframework.http.HttpStatus;
@@ -25,6 +27,16 @@ class IdentityExceptionHandler {
     @ExceptionHandler(UnknownRoleException.class)
     ProblemDetail unknownRole(UnknownRoleException e) {
         return problem(HttpStatus.BAD_REQUEST, "Unknown role", e.getMessage());
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    ProblemDetail invalidCredentials(InvalidCredentialsException e) {
+        return problem(HttpStatus.UNAUTHORIZED, "Login failed", e.getMessage());
+    }
+
+    @ExceptionHandler(InvalidRefreshTokenException.class)
+    ProblemDetail invalidRefreshToken(InvalidRefreshTokenException e) {
+        return problem(HttpStatus.UNAUTHORIZED, "Invalid refresh token", e.getMessage());
     }
 
     private static ProblemDetail problem(HttpStatus status, String title, String detail) {

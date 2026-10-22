@@ -25,6 +25,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.orudesk.orudesk.shared.adapter.in.security.SecurityConfig;
 import org.springframework.context.annotation.Import;
+import com.orudesk.orudesk.identity.application.port.in.AuthTokens;
+import com.orudesk.orudesk.identity.application.port.in.LoginCommand;
+import com.orudesk.orudesk.identity.application.port.in.LoginUseCase;
+import com.orudesk.orudesk.identity.application.port.in.LogoutUseCase;
+import com.orudesk.orudesk.identity.application.port.in.RefreshTokensUseCase;
+import com.orudesk.orudesk.identity.domain.InvalidCredentialsException;
 
 @WebMvcTest(AuthController.class)
 @Import(SecurityConfig.class)
@@ -35,6 +41,15 @@ class AuthControllerTest {
 
     @MockitoBean
     private RegisterUserUseCase registerUser;
+
+    @MockitoBean
+    private LoginUseCase login;
+
+    @MockitoBean
+    private RefreshTokensUseCase refreshTokens;
+
+    @MockitoBean
+    private LogoutUseCase logout;
 
     @Test
     void registersAUserAndReturns201WithItsLocation() throws Exception {
@@ -78,5 +93,34 @@ class AuthControllerTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.title").value("Email already registered"))
                 .andExpect(jsonPath("$.detail").value("email already registered: karthikeyan@orudesk.com"));
+    }
+
+    @Test
+    void loginReturnsBearerTokens() throws Exception {
+        given(login.login(any(LoginCommand.class))).willReturn(new AuthTokens("the-access-token", 900, "the-refresh-token"));
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email": "ck@orudesk.org", "password": "secret-password"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").value("the-access-token"))
+                .andExpect(jsonPath("$.tokenType").value("Bearer"))
+                .andExpect(jsonPath("$.expiresIn").value(900))
+                .andExpect(jsonPath("$.refreshToken").value("the-refresh-token"));
+    }
+
+    @Test
+    void aFailedLoginReturns401() throws Exception {
+        given(login.login(any(LoginCommand.class))).willThrow(new InvalidCredentialsException());
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email": "ck@orudesk.org", "password": "wrong-password"}
+                                """))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.title").value("Login failed"));
     }
 }
