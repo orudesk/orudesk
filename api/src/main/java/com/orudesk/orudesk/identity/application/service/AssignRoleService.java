@@ -11,6 +11,7 @@ import com.orudesk.orudesk.identity.domain.UserId;
 import com.orudesk.orudesk.identity.domain.UserNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.CacheEvict;
 
 @Service
 @Transactional
@@ -27,6 +28,7 @@ public class AssignRoleService implements AssignRoleUseCase {
     }
 
     @Override
+    @CacheEvict(cacheNames = UserProfileService.CACHE, key = "#userId.value()")   // the cached profile is now out of date
     public void assignRole(UserId userId, RoleCode role) {
         if (!loadRolePort.roleExists(role)) {
             throw new UnknownRoleException(role);
