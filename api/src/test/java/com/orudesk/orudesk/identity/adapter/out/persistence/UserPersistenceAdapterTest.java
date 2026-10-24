@@ -12,10 +12,15 @@ import org.springframework.context.annotation.Import;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import com.orudesk.orudesk.TestcontainersConfiguration;
 
-@Import({UserPersistenceAdapter.class, CurrentTenantResolver.class})
+/**
+ * Runs against a PostgreSQL in Docker, started by TestcontainersConfiguration (Flyway creates the tables first).
+ * Each test runs in a transaction that is rolled back at the end, so nothing is left behind.
+ */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@Import({UserPersistenceAdapter.class, CurrentTenantResolver.class, TestcontainersConfiguration.class})
 class UserPersistenceAdapterTest {
 
     private static final TenantId DEMO = new TenantId(UUID.fromString("00000000-0000-0000-0000-000000000001"));

@@ -27,7 +27,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Not @Transactional: Redis is not part of the database transaction, so a rollback would not undo it anyway.
  * @AfterEach cleans both stores by hand.
  */
+import org.springframework.context.annotation.Import;
+
 @SpringBootTest
+@Import(TestcontainersConfiguration.class)
 class ProfileCacheTest {
 
     private static final TenantId DEMO = new TenantId(UUID.fromString("00000000-0000-0000-0000-000000000001"));

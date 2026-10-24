@@ -17,6 +17,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.context.annotation.Import;
 
 import java.util.UUID;
 
@@ -31,7 +32,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * with no logged-in user, and the request would reuse it, so the tenant filter would never switch on.
  * Instead, @AfterEach deletes what the test created.
  */
+
 @SpringBootTest
+@Import(TestcontainersConfiguration.class)
 @AutoConfigureMockMvc
 class TenantIsolationTest {
 

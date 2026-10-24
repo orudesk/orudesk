@@ -22,12 +22,16 @@ import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.springframework.context.annotation.Import;
 
 /**
  * The whole app, real security, real database and Redis: users log in and send a JWT.
  * @Transactional rolls the database back after each test (refresh tokens in Redis expire by themselves).
  */
+
+
 @SpringBootTest
+@Import(TestcontainersConfiguration.class)
 @AutoConfigureMockMvc
 @Transactional
 class SecurityIntegrationTest {

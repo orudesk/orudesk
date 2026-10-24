@@ -7,6 +7,8 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
+import org.springframework.data.redis.cache.RedisCacheWriter;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.serializer.JacksonJsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext.SerializationPair;
 
@@ -18,12 +20,16 @@ import java.time.Duration;
 class IdentityCacheConfig {
 
     @Bean
-    RedisCacheManagerBuilderCustomizer userProfileCache() {
-        return builder -> builder.withCacheConfiguration(UserProfileService.CACHE,
-                RedisCacheConfiguration.defaultCacheConfig()
-                        .prefixCacheNameWith("orudesk:cache:")
-                        .entryTtl(Duration.ofMinutes(10))
-                        .serializeValuesWith(SerializationPair.fromSerializer(
-                                new JacksonJsonRedisSerializer<>(UserProfile.class))));
+    RedisCacheManagerBuilderCustomizer userProfileCache(RedisConnectionFactory connectionFactory) {
+        return builder -> builder
+                // Write to Redis before the method returns. By default Spring Data Redis 4 writes in the
+                // background, so a @CacheEvict could run first and the old profile would land after it.
+                .cacheWriter(RedisCacheWriter.create(connectionFactory, writer -> writer.immediateWrites()))
+                .withCacheConfiguration(UserProfileService.CACHE,
+                        RedisCacheConfiguration.defaultCacheConfig()
+                                .prefixCacheNameWith("orudesk:cache:")
+                                .entryTtl(Duration.ofMinutes(10))
+                                .serializeValuesWith(SerializationPair.fromSerializer(
+                                        new JacksonJsonRedisSerializer<>(UserProfile.class))));
     }
 }
