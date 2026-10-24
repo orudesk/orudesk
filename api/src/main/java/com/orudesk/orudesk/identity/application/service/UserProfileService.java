@@ -23,7 +23,7 @@ public class UserProfileService implements GetUserProfileQuery {
         this.loadUserPort = loadUserPort;
     }
 
-    /** The first call per user reads MariaDB; later calls are answered from Redis until evicted or expired. */
+    /** The first call per user reads the database; later calls are answered from Redis until evicted or expired. */
     @Override
     @Cacheable(cacheNames = CACHE, key = "#userId.value()")
     public UserProfile getProfile(UserId userId) {

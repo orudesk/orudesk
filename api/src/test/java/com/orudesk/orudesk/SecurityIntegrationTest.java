@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * The whole app, real security, real MariaDB and Redis: users log in and send a JWT.
+ * The whole app, real security, real database and Redis: users log in and send a JWT.
  * @Transactional rolls the database back after each test (refresh tokens in Redis expire by themselves).
  */
 @SpringBootTest

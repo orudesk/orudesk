@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Proves three things about the user-profiles cache: it really lands in Redis, it really answers instead of
- * MariaDB, and assigning a role really throws the old copy away.
+ * the database, and assigning a role really throws the old copy away.
  *
  * Not @Transactional: Redis is not part of the database transaction, so a rollback would not undo it anyway.
  * @AfterEach cleans both stores by hand.

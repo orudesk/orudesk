@@ -12,7 +12,7 @@ CREATE TABLE iam_role (
 CREATE TABLE iam_user_role (
                                user_id      UUID         NOT NULL,
                                role_id      UUID         NOT NULL,
-                               assigned_at  DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+                               assigned_at  TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                PRIMARY KEY (user_id, role_id),
                                CONSTRAINT fk_iam_user_role_user FOREIGN KEY (user_id) REFERENCES iam_user (id) ON DELETE CASCADE,
                                CONSTRAINT fk_iam_user_role_role FOREIGN KEY (role_id) REFERENCES iam_role (id) ON DELETE RESTRICT

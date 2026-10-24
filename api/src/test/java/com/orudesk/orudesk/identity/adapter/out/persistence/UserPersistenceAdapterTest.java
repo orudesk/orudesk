@@ -32,7 +32,7 @@ class UserPersistenceAdapterTest {
         user.assignRole(RoleCode.ADMIN);
 
         adapter.save(user);
-        entityManager.flush();   // send the INSERTs to MariaDB now
+        entityManager.flush();   // send the INSERTs to the database now
         entityManager.clear();   // forget cached objects, so the next read really hits the database
 
         User loaded = adapter.findById(user.id()).orElseThrow();

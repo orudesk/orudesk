@@ -5,9 +5,12 @@ CREATE TABLE iam_user (
                           email          VARCHAR(320)  NOT NULL,
                           password_hash  VARCHAR(100)  NOT NULL,
                           enabled        BOOLEAN       NOT NULL DEFAULT TRUE,
-                          created_at     DATETIME(6)   NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-                          updated_at     DATETIME(6)   NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+                          created_at     TIMESTAMPTZ   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                          updated_at     TIMESTAMPTZ   NOT NULL DEFAULT CURRENT_TIMESTAMP,
                           PRIMARY KEY (id),
                           CONSTRAINT uk_iam_user_email UNIQUE (email),
                           CONSTRAINT fk_iam_user_tenant FOREIGN KEY (tenant_id) REFERENCES iam_tenant (id)
 );
+
+CREATE TRIGGER trg_iam_user_updated_at BEFORE UPDATE ON iam_user
+    FOR EACH ROW EXECUTE FUNCTION iam_set_updated_at();
