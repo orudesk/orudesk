@@ -14,9 +14,8 @@ import org.springframework.data.redis.serializer.RedisSerializationContext.Seria
 
 import java.time.Duration;
 
-/** Turns on @Cacheable and stores cached user profiles in Redis as readable JSON. */
+/** Stores cached user profiles in Redis as readable JSON. (Caching itself is turned on in shared CacheConfig.) */
 @Configuration
-@EnableCaching
 class IdentityCacheConfig {
 
     @Bean

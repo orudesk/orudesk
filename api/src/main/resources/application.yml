@@ -21,6 +21,9 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
+      # Give up quickly when Redis is unreachable, instead of hanging every request for a minute.
+      connect-timeout: 2s
+      timeout: 2s
 
 server:
   port: ${SERVER_PORT:8080}
