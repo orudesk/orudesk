@@ -6,6 +6,7 @@ plugins {
 dependencies {
     implementation project(':platform:orudesk-platform-core')
     implementation project(':platform:orudesk-identity')
+    implementation project(':modules:orudesk-party')
 
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.flywaydb:flyway-database-postgresql'

@@ -23,6 +23,13 @@ class ModuleMigrationsTest {
     }
 
     @Test
+    void partyStartsAtABaselineBecauseIdentityCameFirst() {
+        // Version 0 is the baseline Flyway wrote because the schema already had identity's tables.
+        assertThat(jdbc.queryForList("SELECT version FROM flyway_history_party WHERE success ORDER BY installed_rank",
+                String.class)).containsExactly("0", "1");
+    }
+
+    @Test
     void thereIsNoSharedHistoryTable() {
         Integer tables = jdbc.queryForObject("""
                 SELECT COUNT(*) FROM information_schema.tables

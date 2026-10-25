@@ -13,4 +13,5 @@ rootProject.name = 'orudesk'
 
 include 'platform:orudesk-platform-core'
 include 'platform:orudesk-identity'
+include 'modules:orudesk-party'
 include 'apps:orudesk-standard'

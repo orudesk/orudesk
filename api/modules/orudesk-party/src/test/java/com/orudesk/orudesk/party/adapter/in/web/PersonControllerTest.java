@@ -1,0 +1,102 @@
+package com.orudesk.orudesk.party.adapter.in.web;
+
+import com.orudesk.orudesk.party.application.port.in.GetPersonQuery;
+import com.orudesk.orudesk.party.application.port.in.PersonDetails;
+import com.orudesk.orudesk.party.application.port.in.RegisterPersonCommand;
+import com.orudesk.orudesk.party.application.port.in.RegisterPersonUseCase;
+import com.orudesk.orudesk.party.domain.PersonId;
+import com.orudesk.orudesk.party.domain.PersonNotFoundException;
+import com.orudesk.orudesk.shared.adapter.in.security.SecurityConfig;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.time.LocalDate;
+import java.util.UUID;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@WebMvcTest(PersonController.class)
+@Import(SecurityConfig.class)
+@WithMockUser(roles = "ADMIN")
+class PersonControllerTest {
+
+    private static final UUID PERSON_ID = UUID.fromString("44444444-4444-4444-4444-444444444444");
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean
+    private RegisterPersonUseCase registerPerson;
+
+    @MockitoBean
+    private GetPersonQuery getPerson;
+
+    @Test
+    void registersAPersonAndReturns201WithItsLocation() throws Exception {
+        given(registerPerson.register(new RegisterPersonCommand("Asha", "Rao", LocalDate.of(1990, 4, 23), null, null)))
+                .willReturn(PERSON_ID);
+
+        mockMvc.perform(post("/api/v1/people")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"firstName": "Asha", "lastName": "Rao", "dateOfBirth": "1990-04-23"}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(header().string("Location", "/api/v1/people/" + PERSON_ID))
+                .andExpect(jsonPath("$.id").value(PERSON_ID.toString()));
+    }
+
+    @Test
+    void rejectsAMissingLastNameWith400() throws Exception {
+        mockMvc.perform(post("/api/v1/people")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"firstName": "Asha"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.lastName").exists());
+
+        verify(registerPerson, never()).register(any());
+    }
+
+    @Test
+    void returnsAPerson() throws Exception {
+        given(getPerson.getPerson(PERSON_ID))
+                .willReturn(new PersonDetails(PERSON_ID, "Asha", "Rao", LocalDate.of(1990, 4, 23), null, null));
+
+        mockMvc.perform(get("/api/v1/people/{id}", PERSON_ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.lastName").value("Rao"))
+                .andExpect(jsonPath("$.dateOfBirth").value("1990-04-23"));
+    }
+
+    @Test
+    void returns404ForAnUnknownPerson() throws Exception {
+        given(getPerson.getPerson(PERSON_ID)).willThrow(new PersonNotFoundException(new PersonId(PERSON_ID)));
+
+        mockMvc.perform(get("/api/v1/people/{id}", PERSON_ID))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.title").value("Person not found"));
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void onlyAnAdminMayUseTheRegistry() throws Exception {
+        mockMvc.perform(get("/api/v1/people/{id}", PERSON_ID))
+                .andExpect(status().isForbidden());
+    }
+}
