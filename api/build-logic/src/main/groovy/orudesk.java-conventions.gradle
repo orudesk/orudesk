@@ -1,0 +1,31 @@
+// Applied by every Java module: same Java version, same library versions, same test setup.
+plugins {
+    id 'java-library'
+}
+
+group = 'com.orudesk'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+dependencies {
+    // Spring Boot's list of tested library versions, so modules can write dependencies without versions
+    def springBoot = platform(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
+    implementation springBoot
+    testImplementation springBoot
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('compileJava') {
+    options.compilerArgs << '-parameters'   // keep parameter names, for SpEL like key = "#userId.value()"
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}

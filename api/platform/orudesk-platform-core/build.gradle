@@ -1,0 +1,21 @@
+// What every module shares: security, error responses, tenancy, caching setup.
+plugins {
+    id 'orudesk.java-conventions'
+    id 'java-test-fixtures'   // src/testFixtures: test helpers that other modules' tests can use
+}
+
+dependencies {
+    // "api": modules that use platform-core also see these, because platform-core's own classes expose them
+    api 'org.springframework.boot:spring-boot-starter-webmvc'
+    api 'org.springframework.boot:spring-boot-starter-security'
+    api 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+    api 'org.springframework.boot:spring-boot-starter-data-jpa'
+    api 'org.springframework.boot:spring-boot-starter-cache'
+
+    def springBoot = platform(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
+    testFixturesImplementation springBoot
+    testFixturesImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testFixturesApi 'org.springframework.boot:spring-boot-testcontainers'
+    testFixturesApi 'org.testcontainers:testcontainers-junit-jupiter'
+    testFixturesApi 'org.testcontainers:testcontainers-postgresql'
+}

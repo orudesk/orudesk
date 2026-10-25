@@ -1,0 +1,8 @@
+plugins {
+    id 'groovy-gradle-plugin'   // every .gradle file in src/main/groovy becomes a plugin named after the file
+}
+
+dependencies {
+    // The one place the Spring Boot version is written down. Every module gets it from here.
+    implementation 'org.springframework.boot:spring-boot-gradle-plugin:4.1.1'
+}
