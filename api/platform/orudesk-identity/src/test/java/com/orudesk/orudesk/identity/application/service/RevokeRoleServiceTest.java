@@ -1,5 +1,6 @@
 package com.orudesk.orudesk.identity.application.service;
 
+import com.orudesk.orudesk.identity.application.port.in.RoleRevoked;
 import com.orudesk.orudesk.identity.domain.Email;
 import com.orudesk.orudesk.identity.domain.OrgUnitId;
 import com.orudesk.orudesk.identity.domain.PasswordHash;
@@ -12,6 +13,8 @@ import com.orudesk.orudesk.identity.domain.UserId;
 import com.orudesk.orudesk.identity.domain.UserNotFoundException;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -23,7 +26,9 @@ class RevokeRoleServiceTest {
     private static final OrgUnitId SCHOOL = OrgUnitId.newId();
 
     private final InMemoryUserStore store = new InMemoryUserStore();
-    private final RevokeRoleService service = new RevokeRoleService(store, store);
+    private final List<Object> events = new ArrayList<>();
+    private final RevokeRoleService service =
+            new RevokeRoleService(store, store, new InMemoryOrgUnitStore(), events::add);
     private final UserId admin = UserId.newId();   // whoever is doing it, unless a test says otherwise
 
     private User existingUser() {
@@ -88,5 +93,16 @@ class RevokeRoleServiceTest {
     void rejectsAUserThatDoesNotExist() {
         assertThatThrownBy(() -> service.revokeRole(UserId.newId(), RoleCode.ADMIN, null, admin))
                 .isInstanceOf(UserNotFoundException.class);
+    }
+
+    @Test
+    void aRevokeIsRecordedOnlyWhenItTookSomethingAway() {
+        User user = existingUser();
+
+        service.revokeRole(user.id(), RoleCode.ADMIN, null, admin);
+        service.revokeRole(user.id(), RoleCode.ADMIN, null, admin);   // again: nothing left to take
+
+        assertThat(events).singleElement().isInstanceOfSatisfying(RoleRevoked.class, event ->
+                assertThat(event.summary()).isEqualTo("Took ADMIN in the whole organisation from anna@orudesk.org"));
     }
 }

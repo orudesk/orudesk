@@ -44,6 +44,50 @@
         "tags" : [ "Health" ]
       }
     },
+    "/api/v1/audit-entries" : {
+      "get" : {
+        "operationId" : "listAuditEntries",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "subjectId",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "in" : "query",
+          "name" : "after",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 50
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AuditPage"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "What changed, who changed it and when, newest first; optionally for one user, person or unit",
+        "tags" : [ "Audit" ]
+      }
+    },
     "/api/v1/auth/login" : {
       "post" : {
         "operationId" : "login",
@@ -525,6 +569,58 @@
           }
         },
         "required" : [ "role" ]
+      },
+      "AuditEntryDetails" : {
+        "type" : "object",
+        "properties" : {
+          "action" : {
+            "type" : "string"
+          },
+          "actorEmail" : {
+            "type" : [ "string", "null" ]
+          },
+          "actorId" : {
+            "type" : [ "string", "null" ],
+            "format" : "uuid"
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "occurredAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "requestId" : {
+            "type" : [ "string", "null" ]
+          },
+          "subjectId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "subjectType" : {
+            "type" : "string"
+          },
+          "summary" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "action", "id", "occurredAt", "subjectId", "subjectType", "summary" ]
+      },
+      "AuditPage" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AuditEntryDetails"
+            }
+          },
+          "nextCursor" : {
+            "type" : [ "string", "null" ]
+          }
+        },
+        "required" : [ "items" ]
       },
       "CreateOrgUnitRequest" : {
         "type" : "object",

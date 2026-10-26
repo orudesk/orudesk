@@ -13,6 +13,12 @@ Every release of the Orudesk core, newest first. The format follows
   one with each request, and Caddy logs each request as JSON.
 - Prometheus metrics at `/actuator/prometheus`, for whoever sends `Authorization: Bearer <ORUDESK_METRICS_TOKEN>`
   (unset: nobody). Every metric has the tag `application`.
+- An audit log (new module `orudesk-audit`): registering a user, giving or taking away a role, creating an
+  organisation unit and registering a person are recorded with who did it, when, and the request id.
+  `GET /api/v1/audit-entries` (admins; `subjectId` for one record's history, newest first, paged with
+  `after`). The database refuses to change or delete an entry. Editions add their own events by publishing an
+  `AuditableEvent`.
+- The web app has an Activity page (admins), and a person's page links to their history.
 
 ### Changed
 

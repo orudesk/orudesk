@@ -21,6 +21,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/audit-entries': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** What changed, who changed it and when, newest first; optionally for one user, person or unit */
+    get: operations['listAuditEntries'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/auth/login': {
     parameters: {
       query?: never;
@@ -253,6 +270,25 @@ export interface components {
       orgUnitId?: string | null;
       role: string;
     };
+    AuditEntryDetails: {
+      action: string;
+      actorEmail?: string | null;
+      /** Format: uuid */
+      actorId?: string | null;
+      /** Format: uuid */
+      id: string;
+      /** Format: date-time */
+      occurredAt: string;
+      requestId?: string | null;
+      /** Format: uuid */
+      subjectId: string;
+      subjectType: string;
+      summary: string;
+    };
+    AuditPage: {
+      items: components['schemas']['AuditEntryDetails'][];
+      nextCursor?: string | null;
+    };
     CreateOrgUnitRequest: {
       code: string;
       name: string;
@@ -389,6 +425,30 @@ export interface operations {
           'application/json': {
             [key: string]: string;
           };
+        };
+      };
+    };
+  };
+  listAuditEntries: {
+    parameters: {
+      query?: {
+        subjectId?: string;
+        after?: string;
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AuditPage'];
         };
       };
     };

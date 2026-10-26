@@ -2,6 +2,7 @@ package com.orudesk.orudesk.identity.application.service;
 
 import com.orudesk.orudesk.identity.application.port.in.CreateOrgUnitCommand;
 import com.orudesk.orudesk.identity.application.port.in.CreateOrgUnitUseCase;
+import com.orudesk.orudesk.identity.application.port.in.OrgUnitCreated;
 import com.orudesk.orudesk.identity.application.port.in.GetOrgTreeQuery;
 import com.orudesk.orudesk.identity.application.port.in.OrgUnitNode;
 import com.orudesk.orudesk.identity.application.port.out.LoadOrgTreePort;
@@ -12,6 +13,7 @@ import com.orudesk.orudesk.identity.domain.OrgUnitCodeTakenException;
 import com.orudesk.orudesk.identity.domain.OrgUnitId;
 import com.orudesk.orudesk.identity.domain.OrgUnitNotFoundException;
 import com.orudesk.orudesk.identity.domain.OrgUnitType;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,10 +23,13 @@ import java.util.UUID;
 @Transactional
 public class OrgUnitService implements CreateOrgUnitUseCase, GetOrgTreeQuery {
 
+    private final ApplicationEventPublisher events;
     private final LoadOrgTreePort loadOrgTreePort;
     private final SaveOrgUnitPort saveOrgUnitPort;
 
-    public OrgUnitService(LoadOrgTreePort loadOrgTreePort, SaveOrgUnitPort saveOrgUnitPort) {
+    public OrgUnitService(LoadOrgTreePort loadOrgTreePort, SaveOrgUnitPort saveOrgUnitPort,
+                          ApplicationEventPublisher events) {
+        this.events = events;
         this.loadOrgTreePort = loadOrgTreePort;
         this.saveOrgUnitPort = saveOrgUnitPort;
     }
@@ -39,6 +44,7 @@ public class OrgUnitService implements CreateOrgUnitUseCase, GetOrgTreeQuery {
         }
         OrgUnit unit = OrgUnit.createUnder(parent, new OrgUnitType(command.type()), command.code(), command.name());
         saveOrgUnitPort.save(unit);
+        events.publishEvent(new OrgUnitCreated(unit.id().value(), unit.type().value(), unit.name(), parent.name()));
         return unit.id().value();
     }
 

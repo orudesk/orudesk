@@ -21,7 +21,7 @@ class RegisterUserServiceTest {
 
     private final InMemoryUserStore store = new InMemoryUserStore();
     private final RegisterUserService service =
-            new RegisterUserService(store, store, raw -> new PasswordHash("hashed:" + raw));
+            new RegisterUserService(store, store, raw -> new PasswordHash("hashed:" + raw), event -> { });
 
     @Test
     void registersAUserWithAHashedPasswordAndTheUserRole() {

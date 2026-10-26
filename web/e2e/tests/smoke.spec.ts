@@ -56,7 +56,9 @@ test('a deep link survives the login, and the registry can be searched', async (
   await expect(page.getByRole('heading', { name: 'Asha Kumar' })).toBeVisible();
 });
 
-test('an admin adds a person; the server checks the form', async ({ page }) => {
+test('an admin adds a person; the server checks the form, and the history says who', async ({
+  page,
+}) => {
   await logIn(page, ADMIN, '/people/new');
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(page.getByText('must not be blank').first()).toBeVisible();
@@ -67,6 +69,10 @@ test('an admin adds a person; the server checks the form', async ({ page }) => {
   await page.getByRole('button', { name: 'Save' }).click();
 
   await expect(page.getByRole('heading', { name: `Test ${lastName}` })).toBeVisible();
+
+  await page.getByRole('link', { name: 'History' }).click();
+  const entry = page.getByRole('row').filter({ hasText: `Registered Test ${lastName}` });
+  await expect(entry).toContainText(ADMIN);
 });
 
 test('a school admin works in their school, and the admin screens are not theirs', async ({

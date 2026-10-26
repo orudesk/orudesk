@@ -99,6 +99,10 @@ Interactive API docs: <http://localhost:8080/swagger-ui.html>. The OpenAPI contr
   `jvm_memory_used_bytes`. Failed logins per minute:
   `sum(rate(http_server_requests_seconds_count{uri="/api/v1/auth/login",status="401"}[5m])) * 60`.
 
+- **Audit log**: the Activity page (or `GET /api/v1/audit-entries`) says who changed what and when, with the
+  request id to find in the logs. Entries can't be edited or deleted, not even with SQL; keep them in your
+  backups like any other data.
+
 ## Run the tests
 
 ```bash
@@ -130,6 +134,7 @@ dependencies {
     implementation 'com.orudesk:orudesk-platform-core'
     implementation 'com.orudesk:orudesk-identity'
     implementation 'com.orudesk:orudesk-party'
+    implementation 'com.orudesk:orudesk-audit'
 }
 ```
 

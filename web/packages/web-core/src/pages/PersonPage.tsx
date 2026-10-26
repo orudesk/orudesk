@@ -1,4 +1,4 @@
-import { Anchor, Card, Loader, SimpleGrid, Stack, Text, Title } from '@mantine/core';
+import { Anchor, Card, Group, Loader, SimpleGrid, Stack, Text, Title } from '@mantine/core';
 import { Link, useParams } from 'react-router';
 import { usePageTitle } from '../layout/usePageTitle';
 import { usePerson } from '../queries/people';
@@ -25,7 +25,12 @@ export function PersonPage() {
       )}
       {person.data && (
         <>
-          <Title order={1}>{name}</Title>
+          <Group justify="space-between" maw={640}>
+            <Title order={1}>{name}</Title>
+            <Anchor component={Link} to={`/activity?subject=${person.data.id}`} size="sm">
+              History
+            </Anchor>
+          </Group>
           <Card withBorder maw={640}>
             <SimpleGrid cols={{ base: 1, xs: 2 }} spacing="md" component="dl" m={0}>
               <Field label="Date of birth" value={formatDate(person.data.dateOfBirth)} />
