@@ -31,11 +31,17 @@
 	}
 
 	header {
-		# Only this site's own scripts and styles; nothing may frame the app (clickjacking)
-		Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+		# Only this site's own scripts and styles; nothing may frame the app (clickjacking).
+		# "?": only if the response has none, so the API's own stricter policies (Day 43) pass through as they are.
+		?Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
 		X-Content-Type-Options nosniff
-		Referrer-Policy strict-origin-when-cross-origin
+		?Referrer-Policy strict-origin-when-cross-origin
 		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		# Only ever HTTPS from now on, for a year. Browsers ignore this header on plain http:// (the local demo),
+		# so it only takes effect once ORUDESK_SITE is a real domain with a certificate.
+		Strict-Transport-Security "max-age=31536000"
+		# A page opened from Orudesk (or that opened it) can't reach back into its window
+		Cross-Origin-Opener-Policy same-origin
 		-Server
 	}
 }

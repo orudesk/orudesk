@@ -7,7 +7,8 @@ export type EndReason = 'expired' | 'unreachable' | null;
 
 export type LoginResult =
   | { ok: true }
-  | { ok: false; reason: 'credentials' | 'unavailable' | 'network' | 'other'; message?: string };
+  | { ok: false; reason: 'credentials' | 'unavailable' | 'network' | 'other'; message?: string }
+  | { ok: false; reason: 'throttled'; retryAfterSeconds: number; message?: string };
 
 /** Asks the API for the refresh token as an HttpOnly cookie (Day 29), never in JSON. */
 const COOKIE = { header: { 'X-Refresh-Token-Transport': 'cookie' } } as const;
@@ -72,6 +73,9 @@ export class AuthSession {
         return { ok: true };
       }
       if (response.status === 401) return { ok: false, reason: 'credentials' };
+      if (response.status === 429) {
+        return { ok: false, reason: 'throttled', retryAfterSeconds: retryAfter(response) };
+      }
       if (response.status === 503) return { ok: false, reason: 'unavailable' };
       const message = (error as { detail?: string } | undefined)?.detail;
       return message ? { ok: false, reason: 'other', message } : { ok: false, reason: 'other' };
@@ -172,4 +176,13 @@ export class AuthSession {
 function withTabLock<T>(work: () => Promise<T>): Promise<T> {
   const locks = typeof navigator === 'undefined' ? undefined : navigator.locks;
   return locks ? locks.request('orudesk-refresh', work) : work();
+}
+
+/** Retry-After in seconds (the API sends a number; a proxy could send a date). Unknown: 15 minutes. */
+function retryAfter(response: Response): number {
+  const header = response.headers.get('Retry-After');
+  const seconds = header === null ? NaN : Number(header);
+  if (Number.isFinite(seconds) && seconds > 0) return seconds;
+  const date = header === null ? NaN : Date.parse(header);
+  return Number.isFinite(date) ? Math.max(1, Math.ceil((date - Date.now()) / 1000)) : 15 * 60;
 }

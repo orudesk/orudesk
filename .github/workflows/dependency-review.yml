@@ -1,0 +1,47 @@
+# On a pull request: does it add, or upgrade to, a dependency with a known high or critical vulnerability?
+# Then fail, and say which one and what version fixes it.
+#
+# GitHub reads web/pnpm-lock.yaml by itself. Gradle builds have no lockfile it can read, so the first job
+# resolves the API's dependencies and submits them (the "dependency graph"): on main, so there is something
+# to compare with, and on each pull request.
+name: Dependency review
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  gradle-graph:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # submitting a dependency snapshot needs it
+    # A fork's pull request gets a read-only token: no snapshot then, and the review sees npm only
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/dependency-submission@v4
+        with:
+          build-root-directory: api
+
+  review:
+    needs: gradle-graph
+    # On pull requests only; and even when the graph job was skipped (a fork)
+    if: ${{ github.event_name == 'pull_request' && !cancelled() }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write   # for the summary comment
+    steps:
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: on-failure
+          retry-on-snapshot-warnings: true

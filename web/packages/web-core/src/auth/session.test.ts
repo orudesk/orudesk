@@ -30,6 +30,20 @@ describe('AuthSession', () => {
     });
   });
 
+  it('says how long to wait after too many failed logins', async () => {
+    fakeApi({
+      'POST /api/v1/auth/login': () =>
+        json({ title: 'Too many login attempts' }, 429, { 'Retry-After': '754' }),
+    });
+    const session = newSession();
+
+    expect(await session.login('ck@orudesk.org', 'guess')).toEqual({
+      ok: false,
+      reason: 'throttled',
+      retryAfterSeconds: 754,
+    });
+  });
+
   it('restores the session from the refresh cookie after a page reload', async () => {
     fakeApi({ 'POST /api/v1/auth/refresh': () => tokens('restored') });
     const session = newSession();

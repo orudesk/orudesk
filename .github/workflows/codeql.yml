@@ -1,0 +1,42 @@
+# CodeQL reads the code for security bugs (SQL built from input, unsafe redirects, XSS...) and reports them
+# under the repository's Security tab, and on the pull request that adds one. Weekly too, because new
+# checks arrive with new CodeQL versions.
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '17 4 * * 1'   # Mondays, 04:17 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write   # to upload the results
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # build-mode none: CodeQL reads the sources without compiling them. Faster, and no Gradle setup;
+          # a full build finds a little more in Java, which we can switch to if it ever matters.
+          - language: java-kotlin
+            build-mode: none
+          - language: javascript-typescript
+            build-mode: none
+          - language: actions        # the workflows themselves: injection through PR titles, over-wide tokens
+            build-mode: none
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          queries: security-extended
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:${{ matrix.language }}

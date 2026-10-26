@@ -8,10 +8,12 @@ import com.orudesk.orudesk.identity.domain.InvalidCredentialsException;
 import com.orudesk.orudesk.identity.domain.InvalidRefreshTokenException;
 import com.orudesk.orudesk.identity.domain.PasswordHash;
 import com.orudesk.orudesk.identity.domain.TenantId;
+import com.orudesk.orudesk.identity.domain.TooManyLoginAttemptsException;
 import com.orudesk.orudesk.identity.domain.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,11 +26,13 @@ class AuthenticationServiceTest {
 
     private final InMemoryUserStore users = new InMemoryUserStore();
     private final InMemoryRefreshTokenStore refreshTokens = new InMemoryRefreshTokenStore();
+    private final InMemoryLoginAttemptLimiter loginAttempts = new InMemoryLoginAttemptLimiter();
     private final AuthenticationService service = new AuthenticationService(
             users,
             (raw, hash) -> hash.value().equals("hashed:" + raw),
             user -> new AccessToken("access-for-" + user.email().value(), 900),
-            refreshTokens);
+            refreshTokens,
+            loginAttempts);
 
     private User user;
 
@@ -55,6 +59,38 @@ class AuthenticationServiceTest {
         assertThatThrownBy(() -> service.login(new LoginCommand(new Email("nobody@orudesk.org"), "secret-password")))
                 .isInstanceOf(InvalidCredentialsException.class)
                 .hasMessage("invalid email or password");
+    }
+
+    @Test
+    void afterTooManyFailuresEvenTheRightPasswordIsRefusedForAWhile() {
+        for (int i = 0; i < InMemoryLoginAttemptLimiter.MAX_FAILURES; i++) {
+            assertThatThrownBy(() -> service.login(new LoginCommand(EMAIL, "wrong-password")))
+                    .isInstanceOf(InvalidCredentialsException.class);
+        }
+
+        assertThatThrownBy(() -> service.login(new LoginCommand(EMAIL, "secret-password")))
+                .isInstanceOf(TooManyLoginAttemptsException.class)
+                .satisfies(e -> assertThat(((TooManyLoginAttemptsException) e).retryAfter()).isEqualTo(Duration.ofMinutes(15)));
+        assertThat(refreshTokens.size()).isZero();   // no tokens were issued
+    }
+
+    @Test
+    void unknownEmailsAreCountedToo() {
+        Email nobody = new Email("nobody@orudesk.org");
+        assertThatThrownBy(() -> service.login(new LoginCommand(nobody, "guess")))
+                .isInstanceOf(InvalidCredentialsException.class);
+
+        assertThat(loginAttempts.failures(nobody)).isEqualTo(1);
+    }
+
+    @Test
+    void aSuccessfulLoginStartsTheCountAgain() {
+        assertThatThrownBy(() -> service.login(new LoginCommand(EMAIL, "wrong-password")))
+                .isInstanceOf(InvalidCredentialsException.class);
+
+        service.login(new LoginCommand(EMAIL, "secret-password"));
+
+        assertThat(loginAttempts.failures(EMAIL)).isZero();
     }
 
     @Test

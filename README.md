@@ -99,6 +99,11 @@ Interactive API docs: <http://localhost:8080/swagger-ui.html>. The OpenAPI contr
   `jvm_memory_used_bytes`. Failed logins per minute:
   `sum(rate(http_server_requests_seconds_count{uri="/api/v1/auth/login",status="401"}[5m])) * 60`.
 
+- **Failed logins** are limited per email: 5 within 15 minutes, then `429` until the 15 minutes are up
+  (`ORUDESK_LOGIN_MAX_FAILURES`, `ORUDESK_LOGIN_WINDOW`). A person who is locked out waits, or you clear
+  their count in Redis (the key holds a hash of the lower-case email):
+  `redis-cli DEL orudesk:login-failures:$(printf %s asha@example.org | sha256sum | cut -d' ' -f1)`. Watch the rate of 401s and 429s on
+  `/api/v1/auth/login` in your metrics: a spike is someone guessing.
 - **Audit log**: the Activity page (or `GET /api/v1/audit-entries`) says who changed what and when, with the
   request id to find in the logs. Entries can't be edited or deleted, not even with SQL; keep them in your
   backups like any other data.

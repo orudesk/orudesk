@@ -64,6 +64,23 @@ describe('App', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Wrong email or password.');
   });
 
+  it('says how long to wait when the login is blocked', async () => {
+    fakeApi({
+      'POST /api/v1/auth/refresh': () => json({}, 401),
+      'POST /api/v1/auth/login': () =>
+        json({ title: 'Too many login attempts' }, 429, { 'Retry-After': '754' }),
+    });
+    render(<App services={createServices()} modules={[coreModule]} />);
+
+    await userEvent.type(await screen.findByLabelText(/Email/), 'ck@orudesk.org');
+    await userEvent.type(screen.getByLabelText(/Password/), 'a-guess');
+    await userEvent.click(screen.getByRole('button', { name: 'Log in' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Too many failed attempts. Try again in 13 minutes.',
+    );
+  });
+
   it('logs out and forgets the cached profile', async () => {
     fakeApi({
       'POST /api/v1/auth/refresh': () => tokens(),

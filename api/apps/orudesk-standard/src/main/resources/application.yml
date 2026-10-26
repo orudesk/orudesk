@@ -60,6 +60,10 @@ orudesk:
       refresh-token-ttl: 14d
     refresh-cookie:
       secure: ${ORUDESK_REFRESH_COOKIE_SECURE:true}   # HTTPS only. The local profile turns it off for http://localhost
+    login:
+      # After this many failed logins for one email, that email is blocked until `window` after the first failure
+      max-failures: ${ORUDESK_LOGIN_MAX_FAILURES:5}
+      window: ${ORUDESK_LOGIN_WINDOW:15m}
   metrics:
     # The secret Prometheus sends to read /actuator/prometheus (at least 32 characters). Empty: nobody can.
     token: ${ORUDESK_METRICS_TOKEN:}

@@ -19,6 +19,16 @@ Every release of the Orudesk core, newest first. The format follows
   `after`). The database refuses to change or delete an entry. Editions add their own events by publishing an
   `AuditableEvent`.
 - The web app has an Activity page (admins), and a person's page links to their history.
+- Login limit: after 5 failed logins for an email (known or not) within 15 minutes, that email gets `429 Too
+  Many Requests` with `Retry-After` until the 15 minutes are up, even with the right password. Counted in Redis,
+  so every API instance shares it. `ORUDESK_LOGIN_MAX_FAILURES` and `ORUDESK_LOGIN_WINDOW` change the policy.
+  The login page says how long to wait.
+- API responses under `/api` carry `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'` and
+  `Referrer-Policy: no-referrer`. Caddy adds `Strict-Transport-Security` (browsers apply it on HTTPS only) and
+  `Cross-Origin-Opener-Policy`, and no longer replaces the API's own headers.
+- CI: CodeQL (Java, TypeScript and the workflows) on every pull request and weekly, and a dependency review that
+  fails a pull request adding a dependency with a known high or critical vulnerability. Dependabot also watches
+  the Docker base images.
 
 ### Changed
 

@@ -8,13 +8,18 @@ import com.orudesk.orudesk.identity.application.port.in.RefreshTokensUseCase;
 import com.orudesk.orudesk.identity.application.port.out.AccessToken;
 import com.orudesk.orudesk.identity.application.port.out.AccessTokenIssuer;
 import com.orudesk.orudesk.identity.application.port.out.LoadUserPort;
+import com.orudesk.orudesk.identity.application.port.out.LoginAttemptLimiter;
 import com.orudesk.orudesk.identity.application.port.out.PasswordVerifier;
 import com.orudesk.orudesk.identity.application.port.out.RefreshTokenStore;
 import com.orudesk.orudesk.identity.domain.InvalidCredentialsException;
 import com.orudesk.orudesk.identity.domain.InvalidRefreshTokenException;
+import com.orudesk.orudesk.identity.domain.TooManyLoginAttemptsException;
 import com.orudesk.orudesk.identity.domain.User;
 import com.orudesk.orudesk.identity.domain.UserId;
 import org.springframework.stereotype.Service;
+
+import java.time.Duration;
+import java.util.Optional;
 
 @Service
 public class AuthenticationService implements LoginUseCase, RefreshTokensUseCase, LogoutUseCase {
@@ -23,22 +28,34 @@ public class AuthenticationService implements LoginUseCase, RefreshTokensUseCase
     private final PasswordVerifier passwordVerifier;
     private final AccessTokenIssuer accessTokenIssuer;
     private final RefreshTokenStore refreshTokenStore;
+    private final LoginAttemptLimiter loginAttempts;
 
     public AuthenticationService(LoadUserPort loadUserPort, PasswordVerifier passwordVerifier,
-                                 AccessTokenIssuer accessTokenIssuer, RefreshTokenStore refreshTokenStore) {
+                                 AccessTokenIssuer accessTokenIssuer, RefreshTokenStore refreshTokenStore,
+                                 LoginAttemptLimiter loginAttempts) {
         this.loadUserPort = loadUserPort;
         this.passwordVerifier = passwordVerifier;
         this.accessTokenIssuer = accessTokenIssuer;
         this.refreshTokenStore = refreshTokenStore;
+        this.loginAttempts = loginAttempts;
     }
 
     @Override
     public AuthTokens login(LoginCommand command) {
-        User user = loadUserPort.findByEmail(command.email())
+        // Asked first, before the password is even checked: a blocked guesser learns nothing from a right guess
+        Optional<Duration> blocked = loginAttempts.blockedFor(command.email());
+        if (blocked.isPresent()) {
+            throw new TooManyLoginAttemptsException(blocked.get());
+        }
+        Optional<User> user = loadUserPort.findByEmail(command.email())
                 .filter(User::isEnabled)
-                .filter(candidate -> passwordVerifier.matches(command.rawPassword(), candidate.passwordHash()))
-                .orElseThrow(InvalidCredentialsException::new);
-        return issueTokens(user);
+                .filter(candidate -> passwordVerifier.matches(command.rawPassword(), candidate.passwordHash()));
+        if (user.isEmpty()) {
+            loginAttempts.failed(command.email());   // unknown emails too, or the limit would reveal who has an account
+            throw new InvalidCredentialsException();
+        }
+        loginAttempts.succeeded(command.email());
+        return issueTokens(user.get());
     }
 
     @Override

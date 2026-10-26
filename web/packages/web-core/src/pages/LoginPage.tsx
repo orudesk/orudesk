@@ -21,7 +21,16 @@ const failures: Record<Exclude<LoginResult, { ok: true }>['reason'], string> = {
   unavailable: 'Login is unavailable right now. Please try again in a minute.',
   network: "Can't reach the server. Check your connection.",
   other: 'Login failed.',
+  throttled: 'Too many failed attempts.',
 };
+
+/** "Try again in 13 minutes": rounded up, so nobody is told 0 minutes. */
+function failureMessage(result: Exclude<LoginResult, { ok: true }>): string {
+  if (result.message) return result.message;
+  if (result.reason !== 'throttled') return failures[result.reason];
+  const minutes = Math.ceil(result.retryAfterSeconds / 60);
+  return `Too many failed attempts. Try again in ${minutes} ${minutes === 1 ? 'minute' : 'minutes'}.`;
+}
 
 export function LoginPage() {
   usePageTitle('Log in');
@@ -41,7 +50,7 @@ export function LoginPage() {
     setError(null);
     const result = await login(String(form.get('email')), String(form.get('password')));
     setSubmitting(false);
-    if (!result.ok) setError(result.message ?? failures[result.reason]);
+    if (!result.ok) setError(failureMessage(result));
     // On success the status becomes signedIn, and the <Navigate> above takes over.
   }
 
