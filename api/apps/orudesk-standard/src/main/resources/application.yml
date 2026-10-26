@@ -34,6 +34,13 @@ spring:
       connect-timeout: 2s
       timeout: 2s
 
+# Each log line carries the request's id (RequestIdFilter), so one request's lines can be found together.
+# In containers, LOGGING_STRUCTURED_FORMAT_CONSOLE=ecs (compose.yaml) writes JSON lines instead, with the id as a
+# field: what log tools (Loki, Elasticsearch, CloudWatch) read without parsing text.
+logging:
+  pattern:
+    correlation: "[%X{request_id:-}] "
+
 server:
   port: ${SERVER_PORT:8080}
 
@@ -53,6 +60,9 @@ orudesk:
       refresh-token-ttl: 14d
     refresh-cookie:
       secure: ${ORUDESK_REFRESH_COOKIE_SECURE:true}   # HTTPS only. The local profile turns it off for http://localhost
+  metrics:
+    # The secret Prometheus sends to read /actuator/prometheus (at least 32 characters). Empty: nobody can.
+    token: ${ORUDESK_METRICS_TOKEN:}
   web:
     # Other origins whose pages may call the API (CORS), comma-separated. Empty: only the same origin.
     allowed-origins: ${ORUDESK_WEB_ALLOWED_ORIGINS:}
@@ -62,7 +72,8 @@ management:
   endpoints:
     web:
       exposure:
-        include: health, info       # nothing else over HTTP: env, beans and heapdump leak secrets
+        include: health, info, prometheus   # nothing else over HTTP: env, beans and heapdump leak secrets.
+                                            # prometheus needs the metrics token (MetricsSecurityConfig)
   endpoint:
     health:
       probes:
@@ -72,6 +83,9 @@ management:
         readiness:
           include: readinessState, db   # no database, no traffic. Liveness never checks the DB: a DB outage
                                         # must not make the orchestrator restart every app instance at once.
+  metrics:
+    tags:
+      application: ${spring.application.name}   # on every metric, so one Prometheus can watch several editions
   health:
     redis:
       enabled: false                # Redis down means 503 on login, not "restart me" or "send no traffic" (Day 12)

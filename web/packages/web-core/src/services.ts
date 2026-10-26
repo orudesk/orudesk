@@ -3,6 +3,7 @@ import { QueryClient } from '@tanstack/react-query';
 import { authFetch } from './auth/authFetch';
 import { AuthSession } from './auth/session';
 import { ServiceStatus, withServiceStatus } from './status/serviceStatus';
+import { withRequestId } from './status/withRequestId';
 import { UnitStore } from './units/unitStore';
 import { withOrgUnit } from './units/withOrgUnit';
 
@@ -17,7 +18,7 @@ export interface Services {
   serviceStatus: ServiceStatus;
   api: OrudeskClient;
   /**
-   * The fetch behind `api`, with the unit, the token and the outage check. A vertical builds its own typed
+   * The fetch behind `api`, with the request id, the unit, the token and the outage check. A vertical builds its own typed
    * client on it (its contract has paths the core's doesn't), and gets the same behaviour for free.
    */
   fetch: (request: Request) => Promise<Response>;
@@ -30,9 +31,9 @@ export function createServices(): Services {
   const plainFetch = withServiceStatus(serviceStatus, (request) => globalThis.fetch(request));
   const session = new AuthSession(createOrudeskClient({ fetch: plainFetch }));
   const units = new UnitStore();
-  // Each request passes through: add X-Org-Unit, then add the token (and retry once on 401), then note
-  // whether the API answered, then fetch.
-  const fetch = withOrgUnit(units, authFetch(session, plainFetch));
+  // Each request passes through: name it (X-Request-Id), add X-Org-Unit, then add the token (and retry once on
+  // 401), then note whether the API answered, then fetch.
+  const fetch = withRequestId(withOrgUnit(units, authFetch(session, plainFetch)));
   const api = createOrudeskClient({ fetch });
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },

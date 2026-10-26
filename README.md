@@ -80,6 +80,24 @@ Interactive API docs: <http://localhost:8080/swagger-ui.html>. The OpenAPI contr
   443 for the `web` service; Caddy gets and renews the certificate. Outside `localhost` the site must be
   HTTPS, because the login cookie is `Secure`.
 - `web` is the only service that needs to be reachable from outside; the API's port can stay closed.
+- **Logs** are JSON lines (Elastic Common Schema) in containers; `ORUDESK_LOG_FORMAT=logstash` or `gelf` if your
+  log tool prefers those. Every request has an id: the web app sends `X-Request-Id`, the API logs it as
+  `request_id` and returns it, and Caddy's access log has it too. Find one request with
+  `docker compose -f docker/compose.yaml logs app | grep <id>`.
+- **Metrics** for Prometheus at `/actuator/prometheus` on the API (port 8080 inside the network), readable with
+  `ORUDESK_METRICS_TOKEN`:
+
+  ```yaml
+  scrape_configs:
+    - job_name: orudesk
+      metrics_path: /actuator/prometheus
+      authorization: { credentials_file: /etc/prometheus/orudesk-metrics-token }
+      static_configs: [{ targets: ['app:8080'] }]
+  ```
+
+  Useful series: `http_server_requests_seconds` (by `uri`, `status`), `hikaricp_connections_pending`,
+  `jvm_memory_used_bytes`. Failed logins per minute:
+  `sum(rate(http_server_requests_seconds_count{uri="/api/v1/auth/login",status="401"}[5m])) * 60`.
 
 ## Run the tests
 

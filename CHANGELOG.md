@@ -6,6 +6,18 @@ Every release of the Orudesk core, newest first. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Request ids: every response has an `X-Request-Id` (the caller's, if it sent a plain one of 8-64 characters,
+  else a new UUID), and every log line written for the request carries it (`request_id`). The web app sends
+  one with each request, and Caddy logs each request as JSON.
+- Prometheus metrics at `/actuator/prometheus`, for whoever sends `Authorization: Bearer <ORUDESK_METRICS_TOKEN>`
+  (unset: nobody). Every metric has the tag `application`.
+
+### Changed
+
+- In Docker Compose the API logs JSON lines (Elastic Common Schema); `ORUDESK_LOG_FORMAT` picks another format.
+
 ## [1.1.0] - 2026-10-26
 
 The MVP: the web app. An admin signs in, picks the unit they work in, manages users' roles and the people

@@ -58,6 +58,9 @@ services:
       ORUDESK_ADMIN_EMAIL: ${ORUDESK_ADMIN_EMAIL:-}
       ORUDESK_ADMIN_PASSWORD: ${ORUDESK_ADMIN_PASSWORD:-}
       SPRING_PROFILES_ACTIVE: ${ORUDESK_PROFILES:-}   # "demo" loads sample data (docker/demo.env)
+      # Logs as JSON lines (Elastic Common Schema), for a log tool; ORUDESK_LOG_FORMAT=logstash or gelf also work
+      LOGGING_STRUCTURED_FORMAT_CONSOLE: ${ORUDESK_LOG_FORMAT:-ecs}
+      ORUDESK_METRICS_TOKEN: ${ORUDESK_METRICS_TOKEN:-}   # lets Prometheus read /actuator/prometheus
     ports:
       - "8081:8080"   # 8081 on your machine, so a bootRun on 8080 can run at the same time
     depends_on:

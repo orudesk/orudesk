@@ -7,6 +7,10 @@
 {$ORUDESK_SITE::80} {
 	encode zstd gzip
 
+	# An access log line per request, as JSON, with the X-Request-Id the web app sent (in the request headers)
+	# or the API made (in the response headers). Caddy leaves cookies and Authorization out of it.
+	log
+
 	handle /api/* {
 		reverse_proxy {$ORUDESK_API:app:8080}
 	}
