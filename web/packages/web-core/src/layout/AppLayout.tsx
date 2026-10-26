@@ -17,7 +17,9 @@ export function AppLayout() {
   const { pathname } = useLocation();
   const me = useMe();
   const navigation = useNavigation();
-  const items = navigation.filter((item) => !item.role || me.data?.roles.includes(item.role));
+  const items = navigation.filter(
+    (item) => !item.roles || item.roles.some((role) => me.data?.roles.includes(role)),
+  );
 
   return (
     <AppShell

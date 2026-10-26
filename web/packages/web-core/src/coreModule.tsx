@@ -31,7 +31,7 @@ export const coreModule: OrudeskModule = {
   ],
   navigation: [
     { label: 'Home', path: '/', icon: <IconHome size={18} /> },
-    { label: 'People', path: '/people', icon: <IconAddressBook size={18} />, role: 'ADMIN' },
-    { label: 'Users', path: '/users', icon: <IconUsers size={18} />, role: 'ADMIN' },
+    { label: 'People', path: '/people', icon: <IconAddressBook size={18} />, roles: ['ADMIN'] },
+    { label: 'Users', path: '/users', icon: <IconUsers size={18} />, roles: ['ADMIN'] },
   ],
 };

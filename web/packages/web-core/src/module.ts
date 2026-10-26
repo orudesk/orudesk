@@ -5,8 +5,8 @@ export interface NavItem {
   label: string;
   path: string;
   icon: ReactNode;
-  /** Shown only to users with this role. Hiding is a courtesy: the API refuses them anyway. */
-  role?: string;
+  /** Shown only to users with one of these roles. Hiding is a courtesy: the API refuses them anyway. */
+  roles?: string[];
 }
 
 /**
