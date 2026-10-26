@@ -6,6 +6,15 @@ Every release of the Orudesk core, newest first. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `RoleDefinition`: a module or vertical declares the roles it needs as beans, and identity adds them at
+  startup.
+
+### Fixed
+
+- The people registry's tables are now always created before a vertical's tables, which point at them.
+
 ## [0.1.0] - 2026-10-26
 
 The first release: the shared core that the Orudesk verticals (NGO, school, hospital) build on.
