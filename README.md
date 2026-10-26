@@ -10,9 +10,9 @@ One core (login, roles, organisation units, a people registry) and an edition pe
 | Repository | Edition | First feature |
 |---|---|---|
 | [orudesk/orudesk](https://github.com/orudesk/orudesk) | **Core** and the standard edition | Login, roles, org units, people registry |
-| orudesk/orudesk-ngo | NGOs | Donor registration |
-| orudesk/orudesk-school | Schools | Student admission |
-| orudesk/orudesk-hms | Hospitals and clinics | Patient registration |
+| [orudesk/orudesk-ngo](https://github.com/orudesk/orudesk-ngo) | NGOs | Donor registration |
+| [orudesk/orudesk-school](https://github.com/orudesk/orudesk-school) | Schools | Student admission |
+| [orudesk/orudesk-healthcare](https://github.com/orudesk/orudesk-healthcare) | Hospitals and clinics | Patient registration |
 
 ## Try it: the demo
 
