@@ -1,6 +1,6 @@
 import type { Schemas } from '@orudesk/api-client';
 import { describe, expect, it } from 'vitest';
-import { accessibleUnits, flatten } from './accessibleUnits';
+import { accessibleUnits, flatten, preferredUnit } from './accessibleUnits';
 
 const unit = (id: string, children: Schemas['OrgUnitNode'][] = []): Schemas['OrgUnitNode'] => ({
   id,
@@ -42,5 +42,22 @@ describe('accessibleUnits', () => {
 
   it('gives nothing without grants', () => {
     expect(accessibleUnits(tree, [])).toEqual([]);
+  });
+});
+
+describe('preferredUnit', () => {
+  const units = [
+    { id: 'group', name: 'Group', type: 'GROUP', depth: 0 },
+    { id: 'north', name: 'North', type: 'SCHOOL', depth: 1 },
+    { id: 'south', name: 'South', type: 'SCHOOL', depth: 1 },
+  ];
+
+  it('starts a school admin in their school, not at the top where they are only a USER', () => {
+    const grants = [{ role: 'USER' }, { role: 'ADMIN', orgUnitId: 'south' }];
+    expect(preferredUnit(units, grants)?.id).toBe('south');
+  });
+
+  it('starts someone with only tenant-wide roles at the top', () => {
+    expect(preferredUnit(units, [{ role: 'ADMIN' }])?.id).toBe('group');
   });
 });

@@ -9,6 +9,7 @@ web/
 └── packages/
     ├── api-client/      ← the typed API client, generated from the OpenAPI contract
     └── web-core/        ← the shell, sign-in, the unit switcher and the core's screens
+e2e/                     ← end-to-end smoke tests (Playwright) against the demo in Docker
 ```
 
 ## Adding screens: modules
@@ -50,4 +51,15 @@ API running in Docker Compose).
 pnpm check               # Prettier, ESLint, TypeScript and the Vitest tests: what CI runs
 pnpm build               # the production build, in apps/standard/dist
 pnpm format              # fix formatting
+```
+
+## End-to-end tests
+
+`e2e/` drives a real browser through the whole product: the demo (Caddy, the API, PostgreSQL, Redis), at
+desktop and phone sizes. They need the stack running, so they're not part of `pnpm check`:
+
+```bash
+docker compose --env-file docker/demo.env -f docker/compose.yaml --profile app up -d --build --wait   # repo root
+pnpm --filter @orudesk/e2e exec playwright install chromium   # once
+pnpm --filter @orudesk/e2e e2e
 ```

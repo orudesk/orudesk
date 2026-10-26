@@ -30,11 +30,14 @@ Every release of the Orudesk core, newest first. The format follows
   users with scoped roles, twelve people), loaded through the use cases by each module.
 - `SystemActor.runAs(tenant, work)`: work no user started runs inside one tenant, through the same checks as
   a request.
+- End-to-end smoke tests (`web/e2e`, Playwright) against the demo stack, at desktop and phone sizes, in CI.
 - `web/packages/web-core`: the web app's shell and core screens as a package, and a module contract
   (`OrudeskModule`: routes and menu entries) through which editions add their own screens.
 
 ### Changed
 
+- The unit switcher starts a user without a remembered unit in the first unit they have a role in (a school
+  principal in their school), not at the top of the tree.
 - A database that goes away mid-request, or a pool that can't get a connection, now answers 503 with
   `Retry-After` (it was a 500 without a problem body). The standard app waits at most 5 s for a database
   connection (`spring.datasource.hikari.connection-timeout`), not 30 s.

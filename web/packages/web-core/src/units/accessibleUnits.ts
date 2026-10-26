@@ -34,3 +34,13 @@ export function accessibleUnits(
   walk(tree, false, 0);
   return result;
 }
+
+/**
+ * Where to start someone who hasn't picked a unit yet. Everyone has the tenant-wide USER role, so every unit is
+ * open to everyone; but a principal of North School wants North School, not the head office where they're just
+ * a USER. So: the first unit they were given a role in, else the first unit there is.
+ */
+export function preferredUnit(units: FlatUnit[], grants: Schemas['Grant'][]): FlatUnit | undefined {
+  const scoped = new Set(grants.flatMap((grant) => (grant.orgUnitId ? [grant.orgUnitId] : [])));
+  return units.find((unit) => scoped.has(unit.id)) ?? units[0];
+}

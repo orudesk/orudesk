@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo } from 'react';
 import { useMe } from '../queries/me';
 import { useOrgTree } from '../queries/orgUnits';
-import { accessibleUnits } from './accessibleUnits';
+import { accessibleUnits, preferredUnit } from './accessibleUnits';
 import { useCurrentUnit } from './useCurrentUnit';
 
 /**
@@ -21,12 +21,12 @@ export function UnitSwitcher() {
     [tree.data, me.data],
   );
 
-  // No choice yet, or the remembered unit isn't this user's: start at the first one they may use.
+  // No choice yet, or the remembered unit isn't this user's: start where they have a role of their own.
   useEffect(() => {
     if (units.length > 0 && !units.some((unit) => unit.id === unitId)) {
-      setUnitId(units[0]!.id);
+      setUnitId(preferredUnit(units, me.data?.grants ?? [])!.id);
     }
-  }, [units, unitId, setUnitId]);
+  }, [units, unitId, setUnitId, me.data]);
 
   const depthOf = new Map(units.map((unit) => [unit.id, unit.depth]));
 
