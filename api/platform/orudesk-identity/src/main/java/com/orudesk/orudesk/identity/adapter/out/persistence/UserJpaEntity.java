@@ -1,11 +1,11 @@
 package com.orudesk.orudesk.identity.adapter.out.persistence;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
 
 import java.util.HashSet;
@@ -13,7 +13,7 @@ import java.util.Set;
 import java.util.UUID;
 import org.hibernate.annotations.TenantId;
 
-/** One row of iam_user, plus its roles through the iam_user_role join table. */
+/** One row of iam_user, plus its role grants: the rows of iam_user_role. */
 @Entity
 @Table(name = "iam_user")
 class UserJpaEntity {
@@ -34,24 +34,23 @@ class UserJpaEntity {
     @Column(nullable = false)
     private boolean enabled;
 
-    @ManyToMany
-    @JoinTable(
-            name = "iam_user_role",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id"))
-    private Set<RoleJpaEntity> roles = new HashSet<>();
+    // Was a @ManyToMany to RoleJpaEntity. A join table with a column of its own (org_unit_id) needs more:
+    // each row becomes an embeddable value that holds the role and the unit.
+    @ElementCollection
+    @CollectionTable(name = "iam_user_role", joinColumns = @JoinColumn(name = "user_id"))
+    private Set<RoleGrantEmbeddable> grants = new HashSet<>();
 
     protected UserJpaEntity() {
         // JPA needs a no-argument constructor
     }
 
-    UserJpaEntity(UUID id, UUID tenantId, String email, String passwordHash, boolean enabled, Set<RoleJpaEntity> roles) {
+    UserJpaEntity(UUID id, UUID tenantId, String email, String passwordHash, boolean enabled, Set<RoleGrantEmbeddable> grants) {
         this.id = id;
         this.tenantId = tenantId;
         this.email = email;
         this.passwordHash = passwordHash;
         this.enabled = enabled;
-        this.roles = roles;
+        this.grants = grants;
     }
 
     UUID getId() { return id; }
@@ -59,5 +58,5 @@ class UserJpaEntity {
     String getEmail() { return email; }
     String getPasswordHash() { return passwordHash; }
     boolean isEnabled() { return enabled; }
-    Set<RoleJpaEntity> getRoles() { return roles; }
+    Set<RoleGrantEmbeddable> getGrants() { return grants; }
 }

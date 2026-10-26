@@ -3,6 +3,7 @@ package com.orudesk.orudesk.identity.adapter.in.web;
 import com.orudesk.orudesk.identity.domain.EmailAlreadyRegisteredException;
 import com.orudesk.orudesk.identity.domain.InvalidCredentialsException;
 import com.orudesk.orudesk.identity.domain.InvalidRefreshTokenException;
+import com.orudesk.orudesk.identity.domain.MissingOrgUnitException;
 import com.orudesk.orudesk.identity.domain.OrgUnitCodeTakenException;
 import com.orudesk.orudesk.identity.domain.OrgUnitNotFoundException;
 import com.orudesk.orudesk.identity.domain.UnknownRoleException;
@@ -49,6 +50,11 @@ class IdentityExceptionHandler {
     @ExceptionHandler(OrgUnitCodeTakenException.class)
     ProblemDetail orgUnitCodeTaken(OrgUnitCodeTakenException e) {
         return problem(HttpStatus.CONFLICT, "Org unit code taken", e.getMessage());
+    }
+
+    @ExceptionHandler(MissingOrgUnitException.class)
+    ProblemDetail missingOrgUnit(MissingOrgUnitException e) {
+        return problem(HttpStatus.BAD_REQUEST, "Org unit missing", e.getMessage());
     }
 
     private static ProblemDetail problem(HttpStatus status, String title, String detail) {

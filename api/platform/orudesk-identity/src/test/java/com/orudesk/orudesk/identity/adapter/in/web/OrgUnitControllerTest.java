@@ -3,6 +3,7 @@ package com.orudesk.orudesk.identity.adapter.in.web;
 import com.orudesk.orudesk.identity.application.port.in.CreateOrgUnitCommand;
 import com.orudesk.orudesk.identity.application.port.in.CreateOrgUnitUseCase;
 import com.orudesk.orudesk.identity.application.port.in.GetOrgTreeQuery;
+import com.orudesk.orudesk.identity.application.port.in.OrgAccessQuery;
 import com.orudesk.orudesk.identity.application.port.in.OrgUnitNode;
 import com.orudesk.orudesk.identity.domain.OrgUnitCodeTakenException;
 import com.orudesk.orudesk.shared.adapter.in.security.SecurityConfig;
@@ -45,8 +46,15 @@ class OrgUnitControllerTest {
     @MockitoBean
     private GetOrgTreeQuery getOrgTree;
 
+    @MockitoBean
+    private OrgAccessQuery orgAccessQuery;
+
+    @MockitoBean(name = "orgAccess")   // @PreAuthorize's @orgAccess, and the controller's CurrentOrgUnit
+    private OrgUnitAccessAdapter orgAccess;
+
     @Test
     void createsAUnitAndReturns201WithItsLocation() throws Exception {
+        given(orgAccess.currentUserHasRoleAt("ADMIN", ROOT)).willReturn(true);
         given(createOrgUnit.create(new CreateOrgUnitCommand(ROOT, "SCHOOL", "sunrise-a", "Sunrise School A")))
                 .willReturn(SCHOOL);
 
@@ -62,6 +70,7 @@ class OrgUnitControllerTest {
 
     @Test
     void aTakenCodeIs409() throws Exception {
+        given(orgAccess.currentUserHasRoleAt("ADMIN", ROOT)).willReturn(true);
         given(createOrgUnit.create(any())).willThrow(new OrgUnitCodeTakenException("sunrise-a"));
 
         mockMvc.perform(post("/api/v1/org-units")
@@ -76,7 +85,7 @@ class OrgUnitControllerTest {
 
     @Test
     @WithMockUser(roles = "USER")
-    void onlyAnAdminCreatesUnitsButEveryoneSeesTheTree() throws Exception {
+    void onlyAnAdminOfTheParentCreatesUnitsButEveryoneSeesTheTree() throws Exception {   // orgAccess says false
         given(getOrgTree.getTree()).willReturn(new OrgUnitNode(ROOT, "ORGANISATION", "demo", "Demo Organisation", List.of()));
 
         mockMvc.perform(post("/api/v1/org-units")

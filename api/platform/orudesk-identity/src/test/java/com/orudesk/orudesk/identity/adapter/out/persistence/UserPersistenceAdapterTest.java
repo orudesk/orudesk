@@ -60,4 +60,20 @@ class UserPersistenceAdapterTest {
         assertThat(adapter.roleExists(RoleCode.ADMIN)).isTrue();
         assertThat(adapter.roleExists(new RoleCode("PILOT"))).isFalse();
     }
+
+    @Test
+    void savesAndLoadsAScopedGrant() {
+        OrgUnitId demoRoot = new OrgUnitId(UUID.fromString("00000000-0000-0000-0000-000000000201"));   // seeded by V5
+        User user = User.register(DEMO, new Email("priya@orudesk.com"), new PasswordHash("hashed"));
+        user.assignRoleAt(RoleCode.ADMIN, demoRoot);
+
+        adapter.save(user);
+        entityManager.flush();
+        entityManager.clear();
+
+        User loaded = adapter.findById(user.id()).orElseThrow();
+        assertThat(loaded.grants()).containsExactlyInAnyOrder(
+                RoleGrant.tenantWide(RoleCode.USER), RoleGrant.at(RoleCode.ADMIN, demoRoot));
+        assertThat(loaded.roles()).containsExactly(RoleCode.USER);
+    }
 }

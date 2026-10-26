@@ -4,8 +4,10 @@ import com.orudesk.orudesk.identity.application.port.out.LoadRolePort;
 import com.orudesk.orudesk.identity.application.port.out.LoadUserPort;
 import com.orudesk.orudesk.identity.application.port.out.SaveUserPort;
 import com.orudesk.orudesk.identity.domain.Email;
+import com.orudesk.orudesk.identity.domain.OrgUnitId;
 import com.orudesk.orudesk.identity.domain.PasswordHash;
 import com.orudesk.orudesk.identity.domain.RoleCode;
+import com.orudesk.orudesk.identity.domain.RoleGrant;
 import com.orudesk.orudesk.identity.domain.TenantId;
 import com.orudesk.orudesk.identity.domain.UnknownRoleException;
 import com.orudesk.orudesk.identity.domain.User;
@@ -13,8 +15,10 @@ import com.orudesk.orudesk.identity.domain.UserId;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -63,8 +67,10 @@ class UserPersistenceAdapter implements LoadUserPort, SaveUserPort, LoadRolePort
     }
 
     private User toDomain(UserJpaEntity entity) {
-        Set<RoleCode> roleCodes = entity.getRoles().stream()
-                .map(role -> new RoleCode(role.getCode()))
+        Set<RoleGrant> grants = entity.getGrants().stream()
+                .map(grant -> new RoleGrant(
+                        new RoleCode(grant.getRole().getCode()),
+                        grant.getOrgUnitId() == null ? null : new OrgUnitId(grant.getOrgUnitId())))
                 .collect(Collectors.toSet());
         return User.restore(
                 new UserId(entity.getId()),
@@ -72,24 +78,27 @@ class UserPersistenceAdapter implements LoadUserPort, SaveUserPort, LoadRolePort
                 new Email(entity.getEmail()),
                 new PasswordHash(entity.getPasswordHash()),
                 entity.isEnabled(),
-                roleCodes);
+                grants);
     }
 
     private UserJpaEntity toEntity(User user) {
-        Set<String> codes = user.roles().stream().map(RoleCode::value).collect(Collectors.toSet());
-        Set<RoleJpaEntity> roleEntities = roles.findByCodeIn(codes);
-        if (roleEntities.size() != codes.size()) {
-            RoleCode missing = user.roles().stream()
-                    .filter(code -> roleEntities.stream().noneMatch(r -> r.getCode().equals(code.value())))
-                    .findFirst().orElseThrow();
-            throw new UnknownRoleException(missing);
-        }
+        Set<String> codes = user.grants().stream().map(grant -> grant.role().value()).collect(Collectors.toSet());
+        Map<String, RoleJpaEntity> roleEntities = roles.findByCodeIn(codes).stream()
+                .collect(Collectors.toMap(RoleJpaEntity::getCode, Function.identity()));
+        codes.stream().filter(code -> !roleEntities.containsKey(code)).findFirst().ifPresent(missing -> {
+            throw new UnknownRoleException(new RoleCode(missing));
+        });
+        Set<RoleGrantEmbeddable> grants = user.grants().stream()
+                .map(grant -> new RoleGrantEmbeddable(
+                        roleEntities.get(grant.role().value()),
+                        grant.scopeId().map(OrgUnitId::value).orElse(null)))
+                .collect(Collectors.toSet());
         return new UserJpaEntity(
                 user.id().value(),
                 user.tenantId().value(),
                 user.email().value(),
                 user.passwordHash().value(),
                 user.isEnabled(),
-                roleEntities);
+                grants);
     }
 }
