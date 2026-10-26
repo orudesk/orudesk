@@ -1,0 +1,9 @@
+// Applied only by runnable apps: adds bootRun and bootJar on top of the Java conventions.
+plugins {
+    id 'orudesk.java-conventions'
+    id 'org.springframework.boot'
+}
+
+tasks.named('bootRun') {
+    workingDir = rootProject.projectDir   // run from api/, so the app finds api/.env as before
+}

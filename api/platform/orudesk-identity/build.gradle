@@ -1,0 +1,17 @@
+// Users, roles, login. Owns the iam_ tables.
+plugins {
+    id 'orudesk.java-conventions'
+}
+
+dependencies {
+    implementation project(':platform:orudesk-platform-core')
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    testImplementation testFixtures(project(':platform:orudesk-platform-core'))
+    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
+    testRuntimeOnly 'org.flywaydb:flyway-database-postgresql'
+    testRuntimeOnly 'org.postgresql:postgresql'
+}
