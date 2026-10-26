@@ -10,14 +10,14 @@ const me = {
   tenantId: 't1',
   email: 'ck@orudesk.org',
   roles: ['ADMIN'],
-  grants: [],
+  grants: [{ role: 'ADMIN' }],
   enabled: true,
 };
 
 describe('App', () => {
   beforeEach(() => {
     window.history.pushState({}, '', '/');
-    localStorage.clear(); // the colour scheme choice
+    localStorage.clear(); // the colour scheme and unit choices
   });
   afterEach(() => vi.unstubAllGlobals());
 
@@ -103,5 +103,43 @@ describe('App', () => {
 
     expect(document.documentElement).toHaveAttribute('data-mantine-color-scheme', 'dark');
     expect(screen.getByRole('button', { name: 'Switch to light theme' })).toBeInTheDocument();
+  });
+
+  it('works in the first unit the user may use, and switches units', async () => {
+    const tree = {
+      id: 'group',
+      name: 'Sunrise Group',
+      code: 'SUNRISE',
+      type: 'GROUP',
+      children: [
+        { id: 'north', name: 'North School', code: 'N', type: 'SCHOOL', children: [] },
+        { id: 'south', name: 'South School', code: 'S', type: 'SCHOOL', children: [] },
+      ],
+    };
+    const api = fakeApi({
+      'POST /api/v1/auth/refresh': () => tokens(),
+      'GET /api/v1/users/me': () => json(me),
+      'GET /api/v1/org-units': () => json(tree),
+      'GET /api/v1/org-units/current': (request) => {
+        const id = request.headers.get('X-Org-Unit');
+        const unit = id === 'group' ? tree : tree.children.find((c) => c.id === id)!;
+        return json({ ...unit, roles: id === 'south' ? ['ADMIN', 'TEACHER'] : ['ADMIN'] });
+      },
+    });
+    render(<App services={createServices()} />);
+
+    expect(await screen.findByText('Sunrise Group', { selector: 'p' })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('combobox', { name: 'Org unit' }));
+    // hidden: the dropdown is still fading in (a CSS transition jsdom never finishes)
+    await userEvent.click(
+      await screen.findByRole('option', { name: /South School/, hidden: true }),
+    );
+
+    expect(await screen.findByText('South School', { selector: 'p' })).toBeInTheDocument();
+    expect(await screen.findByText('TEACHER')).toBeInTheDocument();
+    const last = api.requests.filter((r) => r.url.endsWith('/org-units/current')).at(-1);
+    expect(last?.headers.get('X-Org-Unit')).toBe('south');
+    expect(localStorage.getItem('orudesk.orgUnit')).toBe('south');
   });
 });

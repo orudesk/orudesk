@@ -2,6 +2,7 @@ import { Anchor, AppShell, Burger, Group, NavLink, Text } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { Link, Outlet, useLocation } from 'react-router';
 import { ColorSchemeToggle } from './ColorSchemeToggle';
+import { UnitSwitcher } from '../units/UnitSwitcher';
 import { navigation } from './navigation';
 import { UserMenu } from './UserMenu';
 
@@ -39,6 +40,7 @@ export function AppLayout() {
             </Text>
           </Group>
           <Group gap="xs">
+            <UnitSwitcher />
             <ColorSchemeToggle />
             <UserMenu />
           </Group>
