@@ -1,17 +1,23 @@
-import { useApiHealth } from './useApiHealth';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import { createBrowserRouter, RouterProvider } from 'react-router';
+import { routes } from './routes';
+import type { Services } from './services';
+import { ServicesContext } from './ServicesContext';
 
-const messages = {
-  checking: 'Checking the API...',
-  up: 'The API is up.',
-  down: 'The API is not reachable. Is it running on port 8080?',
-} as const;
+export function App({ services }: { services: Services }) {
+  const [router] = useState(() => createBrowserRouter(routes));
 
-export function App() {
-  const health = useApiHealth();
+  // Once, at start: log back in with the refresh cookie if there is one.
+  useEffect(() => {
+    void services.session.restore();
+  }, [services.session]);
+
   return (
-    <main>
-      <h1>Orudesk</h1>
-      <p role="status">{messages[health]}</p>
-    </main>
+    <ServicesContext value={services}>
+      <QueryClientProvider client={services.queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
+    </ServicesContext>
   );
 }
