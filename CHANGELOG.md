@@ -23,6 +23,13 @@ Every release of the Orudesk core, newest first. The format follows
 - Web app: sign-in, the app shell, the org unit switcher, a Users screen for admins where they give and
   take away roles, and People screens (search, add with the server's field errors, one person's page), a banner while the API is down, error pages
   that keep the menu, and a notice when the session has ended.
+- A web image (`ghcr.io/orudesk/orudesk-standard-web`): the web app served by Caddy, which also passes `/api`
+  to the API, sets security headers (CSP, no framing) and caching, and gets an HTTPS certificate when
+  `ORUDESK_SITE` is a domain. Compose runs it on port 8090 with the `app` profile.
+- A one-command demo with sample data: `docker/demo.env` and the `demo` Spring profile (two schools, a clinic,
+  users with scoped roles, twelve people), loaded through the use cases by each module.
+- `SystemActor.runAs(tenant, work)`: work no user started runs inside one tenant, through the same checks as
+  a request.
 - `web/packages/web-core`: the web app's shell and core screens as a package, and a module contract
   (`OrudeskModule`: routes and menu entries) through which editions add their own screens.
 

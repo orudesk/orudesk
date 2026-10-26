@@ -14,6 +14,21 @@ One core (login, roles, organisation units, a people registry) and an edition pe
 | orudesk/orudesk-school | Schools | Student admission |
 | orudesk/orudesk-hms | Hospitals and clinics | Patient registration |
 
+## Try it: the demo
+
+You need only **Docker** (Docker Desktop, Colima or Podman) and this repository. One command:
+
+```bash
+git clone https://github.com/orudesk/orudesk.git
+cd orudesk
+docker compose --env-file docker/demo.env -f docker/compose.yaml --profile app up -d --build --wait
+```
+
+Open <http://localhost:8090> and log in as `admin@demo.orudesk.org` with the password `demo-password`. The
+demo has two schools and a clinic, a dozen people, and users with roles in one school only
+(`principal@demo.orudesk.org`, same password). Remove it with
+`docker compose -f docker/compose.yaml --profile app down -v`.
+
 ## Quick start: run it
 
 You need only **Docker** (Docker Desktop, Colima or Podman) and this repository.
@@ -25,8 +40,8 @@ cp api/.env.example api/.env        # then set DB_PASSWORD, ORUDESK_JWT_SECRET a
 docker compose --env-file api/.env -f docker/compose.yaml --profile app up -d --build --wait
 ```
 
-The first build takes a few minutes (it compiles the API inside Docker). Then the API is on
-<http://localhost:8081>; `--wait` returns once `/actuator/health/readiness` says UP. Instead of building,
+The first build takes a few minutes (it compiles the API and the web app inside Docker). Then Orudesk is on
+<http://localhost:8090> (the API alone on <http://localhost:8081>); `--wait` returns once both are healthy. Instead of building,
 you can run a released image: set `ORUDESK_VERSION=1.0.0` in `api/.env` and leave out `--build`.
 
 Stop it with `docker compose -f docker/compose.yaml --profile app down` (add `-v` to delete the data too).
@@ -61,7 +76,10 @@ Interactive API docs: <http://localhost:8080/swagger-ui.html>. The OpenAPI contr
   this one checks the database) need no token and say only UP or DOWN. Point your orchestrator at them.
 - Back up the PostgreSQL volume. Redis holds only refresh tokens and caches: losing it logs everyone out,
   nothing more.
-- Put TLS in front (a reverse proxy such as Caddy or nginx); the app speaks plain HTTP.
+- HTTPS: set `ORUDESK_SITE=erp.example.org` (your domain, pointing at the server) and publish ports 80 and
+  443 for the `web` service; Caddy gets and renews the certificate. Outside `localhost` the site must be
+  HTTPS, because the login cookie is `Secure`.
+- `web` is the only service that needs to be reachable from outside; the API's port can stay closed.
 
 ## Run the tests
 
