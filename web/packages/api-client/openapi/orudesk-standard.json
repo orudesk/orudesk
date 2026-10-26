@@ -169,7 +169,7 @@
           "required" : true
         },
         "responses" : {
-          "200" : {
+          "201" : {
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -177,7 +177,7 @@
                 }
               }
             },
-            "description" : "OK"
+            "description" : "Created"
           }
         },
         "security" : [ ],
@@ -216,7 +216,7 @@
           "required" : true
         },
         "responses" : {
-          "200" : {
+          "201" : {
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -224,7 +224,7 @@
                 }
               }
             },
-            "description" : "OK"
+            "description" : "Created"
           }
         },
         "summary" : "Add a school, branch or group below an existing unit",
@@ -315,7 +315,7 @@
           "required" : true
         },
         "responses" : {
-          "200" : {
+          "201" : {
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -323,7 +323,7 @@
                 }
               }
             },
-            "description" : "OK"
+            "description" : "Created"
           }
         },
         "summary" : "Add a person to the registry",
