@@ -28,6 +28,26 @@ jobs:
           name: openapi
           path: api/apps/orudesk-standard/build/openapi/
 
+  # The web app: formatting, lint, type check, unit tests and a production build.
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4          # installs the pnpm version named in web/package.json
+        with:
+          package_json_file: web/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: web/.nvmrc
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile   # like npm ci: fail if the lockfile doesn't match package.json
+      - run: pnpm check
+      - run: pnpm build
+
   # The Dockerfile is code too: build the image on every PR (without pushing) so a broken one is caught here,
   # not on release day.
   image:

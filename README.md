@@ -70,6 +70,19 @@ cd api
 ./gradlew test       # needs Docker: Testcontainers starts a throwaway PostgreSQL and Redis
 ```
 
+## The web app
+
+`web/` holds the web app (React, TypeScript, Vite), as a pnpm workspace. With the API running on 8080:
+
+```bash
+cd web
+corepack enable      # once: gives you the pnpm version the workspace asks for
+pnpm install
+pnpm dev             # http://localhost:5173
+```
+
+See [web/README.md](web/README.md).
+
 ## Build your own edition on the core
 
 The core modules are published to Maven Central. In your Gradle build, import the BOM and then name the

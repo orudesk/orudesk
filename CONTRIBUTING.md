@@ -10,8 +10,8 @@ Thank you for helping. This page says how to get a change merged with as little 
 
 ## Set up
 
-Follow the quick start in the [README](README.md). `./gradlew test` must pass before you start, so you
-know any failure afterwards is yours.
+Follow the quick start in the [README](README.md). `./gradlew test` (in `api/`) and `pnpm check` (in
+`web/`) must pass before you start, so you know any failure afterwards is yours.
 
 ## Making a change
 
@@ -24,7 +24,9 @@ know any failure afterwards is yours.
 4. **Database changes are new migrations.** Add `V<next>__what_it_does.sql` in your module's
    `db/migration/<module>/` folder. Never edit a migration that has been merged: other databases have
    already run it.
-5. No secrets in git. Configuration comes from environment variables; add placeholders to
+5. **Web changes** live in `web/` (React + TypeScript, see [web/README.md](web/README.md)). Run
+   `pnpm format` before committing; CI runs `pnpm check` (Prettier, ESLint, TypeScript, Vitest).
+6. No secrets in git. Configuration comes from environment variables; add placeholders to
    `api/.env.example`.
 
 ## Commit messages
