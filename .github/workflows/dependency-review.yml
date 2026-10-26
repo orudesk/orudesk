@@ -27,7 +27,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '25'
-      - uses: gradle/actions/dependency-submission@v4
+      - uses: gradle/actions/dependency-submission@ed408507eac070d1f99cc633dbcf757c94c7933a   # v4.4.3: a third-party action, pinned to a commit
         with:
           build-root-directory: api
 
