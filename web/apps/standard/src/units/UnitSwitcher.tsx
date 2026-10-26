@@ -51,7 +51,7 @@ export function UnitSwitcher() {
       }}
       allowDeselect={false}
       searchable={units.length > 7}
-      w={{ base: 160, sm: 240 }}
+      w={{ base: 136, sm: 240 }}
       comboboxProps={{ width: 'target' }}
     />
   );

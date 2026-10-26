@@ -358,6 +358,71 @@
         "tags" : [ "People" ]
       }
     },
+    "/api/v1/roles" : {
+      "get" : {
+        "operationId" : "listRoles",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/RoleDetails"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Every role that can be granted",
+        "tags" : [ "Roles" ]
+      }
+    },
+    "/api/v1/users" : {
+      "get" : {
+        "operationId" : "listUsers",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "q",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "after",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserPage"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "The tenant's users with their roles, one page at a time",
+        "tags" : [ "Users" ]
+      }
+    },
     "/api/v1/users/me" : {
       "get" : {
         "operationId" : "getMyProfile",
@@ -632,6 +697,21 @@
         },
         "required" : [ "id" ]
       },
+      "RoleDetails" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : [ "string", "null" ]
+          },
+          "name" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "code", "name" ]
+      },
       "TokenResponse" : {
         "type" : "object",
         "properties" : {
@@ -676,6 +756,21 @@
         },
         "required" : [ "code", "id", "name", "roles", "type" ]
       },
+      "UserPage" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserSummary"
+            }
+          },
+          "nextCursor" : {
+            "type" : [ "string", "null" ]
+          }
+        },
+        "required" : [ "items" ]
+      },
       "UserProfile" : {
         "type" : "object",
         "properties" : {
@@ -707,6 +802,28 @@
           }
         },
         "required" : [ "email", "enabled", "grants", "id", "roles", "tenantId" ]
+      },
+      "UserSummary" : {
+        "type" : "object",
+        "properties" : {
+          "email" : {
+            "type" : "string"
+          },
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "grants" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Grant"
+            }
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        },
+        "required" : [ "email", "enabled", "grants", "id" ]
       }
     },
     "securitySchemes" : {

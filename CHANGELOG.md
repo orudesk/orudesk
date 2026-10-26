@@ -14,6 +14,10 @@ Every release of the Orudesk core, newest first. The format follows
   as an HttpOnly, Secure, SameSite=Strict cookie (path `/api/v1/auth`) instead of in the JSON body, and
   `/refresh` and `/logout` read it from there. Clients that don't send the header work as before.
 - CORS, off by default: `ORUDESK_WEB_ALLOWED_ORIGINS` lists other origins whose pages may call the API.
+- `GET /api/v1/users` (admins): the tenant's users with their grants, sorted by email, searchable by part of
+  the address (`q`), paged with a cursor (`after`, `size` up to 100).
+- `GET /api/v1/roles`: the roles there are, with names and descriptions.
+- Web app: sign-in, the app shell, the org unit switcher, and a Users screen for admins.
 
 ### Changed
 

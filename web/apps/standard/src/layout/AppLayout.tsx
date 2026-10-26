@@ -2,6 +2,7 @@ import { Anchor, AppShell, Burger, Group, NavLink, Text } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { Link, Outlet, useLocation } from 'react-router';
 import { ColorSchemeToggle } from './ColorSchemeToggle';
+import { useMe } from '../queries/me';
 import { UnitSwitcher } from '../units/UnitSwitcher';
 import { navigation } from './navigation';
 import { UserMenu } from './UserMenu';
@@ -13,6 +14,8 @@ import { UserMenu } from './UserMenu';
 export function AppLayout() {
   const [menuOpen, menu] = useDisclosure(false);
   const { pathname } = useLocation();
+  const me = useMe();
+  const items = navigation.filter((item) => !item.role || me.data?.roles.includes(item.role));
 
   return (
     <AppShell
@@ -26,8 +29,8 @@ export function AppLayout() {
       </Anchor>
 
       <AppShell.Header>
-        <Group h="100%" px="md" justify="space-between">
-          <Group gap="sm">
+        <Group h="100%" px="md" justify="space-between" wrap="nowrap">
+          <Group gap="sm" wrap="nowrap">
             <Burger
               opened={menuOpen}
               onClick={menu.toggle}
@@ -39,7 +42,8 @@ export function AppLayout() {
               Orudesk
             </Text>
           </Group>
-          <Group gap="xs">
+          {/* nowrap: on a phone the header must stay one line, or it spills over the page */}
+          <Group gap={6} wrap="nowrap">
             <UnitSwitcher />
             <ColorSchemeToggle />
             <UserMenu />
@@ -48,7 +52,7 @@ export function AppLayout() {
       </AppShell.Header>
 
       <AppShell.Navbar p="sm" aria-label="Main menu">
-        {navigation.map((item) => (
+        {items.map((item) => (
           <NavLink
             key={item.path}
             component={Link}

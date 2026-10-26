@@ -30,4 +30,6 @@ class RoleJpaEntity {
 
     UUID getId() { return id; }
     String getCode() { return code; }
+    String getName() { return name; }
+    String getDescription() { return description; }
 }
