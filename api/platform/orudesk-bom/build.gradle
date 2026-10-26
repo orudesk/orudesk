@@ -1,0 +1,31 @@
+// The Orudesk BOM ("bill of materials"): one version number a vertical writes down to get matching
+// versions of every core module, and of Spring Boot's libraries. No code, only a list of versions.
+plugins {
+    id 'java-platform'
+    id 'orudesk.publishing'
+}
+
+description = 'Matching versions of the Orudesk core modules and the Spring Boot they are built with'
+
+javaPlatform {
+    allowDependencies()   // so the BOM can include Spring Boot's own BOM, below
+}
+
+dependencies {
+    api platform(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
+    api platform('org.springframework.modulith:spring-modulith-bom:2.1.1')
+
+    constraints {
+        api project(':platform:orudesk-platform-core')
+        api project(':platform:orudesk-identity')
+        api project(':modules:orudesk-party')
+    }
+}
+
+publishing {
+    publications {
+        bom(MavenPublication) {
+            from components.javaPlatform
+        }
+    }
+}

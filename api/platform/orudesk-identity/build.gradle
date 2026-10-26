@@ -1,7 +1,9 @@
 // Users, roles, login. Owns the iam_ tables.
 plugins {
-    id 'orudesk.java-conventions'
+    id 'orudesk.published-library'
 }
+
+description = 'Orudesk users, roles, login and org units'
 
 dependencies {
     implementation project(':platform:orudesk-platform-core')

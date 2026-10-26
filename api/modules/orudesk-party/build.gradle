@@ -1,7 +1,9 @@
 // The People registry: every person an organisation deals with. Owns the party_ tables.
 plugins {
-    id 'orudesk.java-conventions'
+    id 'orudesk.published-library'
 }
+
+description = 'Orudesk people registry'
 
 dependencies {
     implementation project(':platform:orudesk-platform-core')

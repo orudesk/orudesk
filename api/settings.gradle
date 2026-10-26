@@ -16,6 +16,7 @@ dependencyResolutionManagement {
 
 rootProject.name = 'orudesk'
 
+include 'platform:orudesk-bom'
 include 'platform:orudesk-platform-core'
 include 'platform:orudesk-identity'
 include 'modules:orudesk-party'

@@ -3,8 +3,7 @@ plugins {
     id 'java-library'
 }
 
-group = 'com.orudesk'
-version = '0.0.1-SNAPSHOT'
+group = 'com.orudesk'   // the version comes from gradle.properties
 
 java {
     toolchain {
