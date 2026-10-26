@@ -21,7 +21,7 @@ const tree = {
   children: [{ id: 'north', name: 'North School', code: 'N', type: 'SCHOOL', children: [] }],
 };
 const user = (email: string, grants: unknown[] = [{ role: 'USER' }], enabled = true) => ({
-  id: email,
+  id: email.split('@')[0]!,
   email,
   enabled,
   grants,
@@ -105,5 +105,94 @@ describe('Users page', () => {
       "You don't have access to this page.",
     );
     expect(screen.queryByRole('link', { name: 'Users' })).not.toBeInTheDocument();
+  });
+
+  describe('the roles dialog', () => {
+    const roles = [
+      { code: 'ADMIN', name: 'Administrator', description: null },
+      { code: 'USER', name: 'User', description: null },
+    ];
+
+    // A tiny server: anna's grants change when the dialog posts or deletes
+    function server() {
+      let grants: { role: string; orgUnitId?: string | null }[] = [
+        { role: 'ADMIN', orgUnitId: 'north' },
+        { role: 'USER' },
+      ];
+      return openUsersPage({
+        'GET /api/v1/roles': () => json(roles),
+        'GET /api/v1/users': () =>
+          json({ items: [user('anna@orudesk.org', grants)], nextCursor: null }),
+        'POST /api/v1/users/anna/roles': async (request) => {
+          grants = [...grants, (await request.json()) as (typeof grants)[number]];
+          return new Response(null, { status: 204 });
+        },
+        'DELETE /api/v1/users/anna/roles/ADMIN': (request) => {
+          const unit = new URL(request.url).searchParams.get('orgUnitId');
+          grants = grants.filter((g) => !(g.role === 'ADMIN' && (g.orgUnitId ?? null) === unit));
+          return new Response(null, { status: 204 });
+        },
+        'DELETE /api/v1/users/anna/roles/USER': () =>
+          json(
+            { title: 'Role change not allowed', detail: 'a user must have at least one role' },
+            409,
+          ),
+      });
+    }
+
+    async function openDialog() {
+      await userEvent.click(
+        await screen.findByRole('button', { name: 'Manage roles of anna@orudesk.org' }),
+      );
+      return screen.findByRole('dialog', { name: 'Roles of anna@orudesk.org' });
+    }
+
+    it('removes a scoped role, and the list shows it gone', async () => {
+      const api = server();
+      const dialog = await openDialog();
+
+      await userEvent.click(
+        await within(dialog).findByRole('button', { name: 'Remove Administrator in North School' }),
+      );
+
+      const anna = screen.getByText('anna@orudesk.org').closest('tr')!;
+      await vi.waitFor(() =>
+        expect(within(anna).queryByText('ADMIN · North School')).not.toBeInTheDocument(),
+      );
+      const sent = api.requests.find((r) => r.method === 'DELETE')!;
+      expect(new URL(sent.url).searchParams.get('orgUnitId')).toBe('north');
+    });
+
+    it('adds a role for the whole organisation', async () => {
+      const api = server();
+      const dialog = await openDialog();
+
+      await userEvent.click(within(dialog).getByRole('combobox', { name: 'Role' }));
+      await userEvent.click(
+        await screen.findByRole('option', { name: 'Administrator', hidden: true }),
+      );
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Add role' }));
+
+      expect(
+        await within(dialog).findByRole('button', {
+          name: 'Remove Administrator in Whole organisation',
+        }),
+      ).toBeInTheDocument();
+      const sent = api.requests.find((r) => r.method === 'POST' && r.url.endsWith('/roles'))!;
+      expect(await sent.json()).toEqual({ role: 'ADMIN', orgUnitId: null });
+    });
+
+    it('explains when the API says no', async () => {
+      server();
+      const dialog = await openDialog();
+
+      await userEvent.click(
+        await within(dialog).findByRole('button', { name: 'Remove User in Whole organisation' }),
+      );
+
+      expect(await within(dialog).findByRole('alert')).toHaveTextContent(
+        'A user must have at least one role.',
+      );
+    });
   });
 });

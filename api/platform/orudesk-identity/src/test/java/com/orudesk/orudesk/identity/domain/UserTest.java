@@ -40,6 +40,19 @@ class UserTest {
     }
 
     @Test
+    void revokesOneGrantAndLeavesTheSameRoleElsewhere() {
+        User user = newUser();
+        OrgUnitId school = OrgUnitId.newId();
+        user.assignRole(RoleCode.ADMIN);
+        user.assignRoleAt(RoleCode.ADMIN, school);
+
+        user.revoke(RoleGrant.at(RoleCode.ADMIN, school));
+
+        assertThat(user.grants()).containsExactlyInAnyOrder(
+                RoleGrant.tenantWide(RoleCode.USER), RoleGrant.tenantWide(RoleCode.ADMIN));
+    }
+
+    @Test
     void cannotAssignARoleToADisabledUser() {
         User user = newUser();
         user.disable();

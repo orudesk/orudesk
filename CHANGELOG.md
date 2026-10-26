@@ -17,10 +17,15 @@ Every release of the Orudesk core, newest first. The format follows
 - `GET /api/v1/users` (admins): the tenant's users with their grants, sorted by email, searchable by part of
   the address (`q`), paged with a cursor (`after`, `size` up to 100).
 - `GET /api/v1/roles`: the roles there are, with names and descriptions.
-- Web app: sign-in, the app shell, the org unit switcher, and a Users screen for admins.
+- `DELETE /api/v1/users/{userId}/roles/{role}` (optional `orgUnitId`): takes one grant away, with the same
+  rule as assigning about who may do it. 409 if the user would be left without a role, or if an admin tries to
+  remove their own tenant-wide ADMIN role.
+- Web app: sign-in, the app shell, the org unit switcher, and a Users screen for admins where they give and
+  take away roles.
 
 ### Changed
 
+- Assigning a role to a disabled user answers 409 "Role change not allowed" instead of 500.
 - The OpenAPI contract says which fields are always present: record components are required unless they
   are `@Nullable` (JSpecify), and nullable ones have type `[..., "null"]`. The contract is sorted and
   indented, so it diffs cleanly.

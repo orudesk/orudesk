@@ -56,16 +56,20 @@ public class User {
 
     private void grant(RoleGrant grant) {
         if (!enabled) {
-            throw new IllegalStateException("cannot assign a role to a disabled user");
+            throw new RoleChangeNotAllowedException("cannot assign a role to a disabled user");
         }
         grants.add(grant);
     }
 
     /** Removes the tenant-wide grant of this role. */
     public void removeRole(RoleCode role) {
-        RoleGrant grant = RoleGrant.tenantWide(role);
+        revoke(RoleGrant.tenantWide(role));
+    }
+
+    /** Removes one grant, tenant-wide or scoped. Removing a grant the user doesn't have changes nothing. */
+    public void revoke(RoleGrant grant) {
         if (grants.contains(grant) && grants.size() == 1) {
-            throw new IllegalStateException("a user must have at least one role");
+            throw new RoleChangeNotAllowedException("a user must have at least one role");
         }
         grants.remove(grant);
     }

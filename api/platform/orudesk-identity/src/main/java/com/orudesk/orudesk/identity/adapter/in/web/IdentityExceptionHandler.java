@@ -6,6 +6,7 @@ import com.orudesk.orudesk.identity.domain.InvalidRefreshTokenException;
 import com.orudesk.orudesk.identity.domain.MissingOrgUnitException;
 import com.orudesk.orudesk.identity.domain.OrgUnitCodeTakenException;
 import com.orudesk.orudesk.identity.domain.OrgUnitNotFoundException;
+import com.orudesk.orudesk.identity.domain.RoleChangeNotAllowedException;
 import com.orudesk.orudesk.identity.domain.UnknownRoleException;
 import com.orudesk.orudesk.identity.domain.UserNotFoundException;
 import org.springframework.http.HttpStatus;
@@ -55,6 +56,11 @@ class IdentityExceptionHandler {
     @ExceptionHandler(MissingOrgUnitException.class)
     ProblemDetail missingOrgUnit(MissingOrgUnitException e) {
         return problem(HttpStatus.BAD_REQUEST, "Org unit missing", e.getMessage());
+    }
+
+    @ExceptionHandler(RoleChangeNotAllowedException.class)
+    ProblemDetail roleChangeNotAllowed(RoleChangeNotAllowedException e) {
+        return problem(HttpStatus.CONFLICT, "Role change not allowed", e.getMessage());
     }
 
     private static ProblemDetail problem(HttpStatus status, String title, String detail) {

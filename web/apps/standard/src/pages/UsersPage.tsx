@@ -1,4 +1,15 @@
-import { Badge, Button, Group, Loader, Stack, Table, Text, TextInput, Title } from '@mantine/core';
+import {
+  Badge,
+  Button,
+  Group,
+  Loader,
+  Stack,
+  Table,
+  Text,
+  TextInput,
+  Title,
+  VisuallyHidden,
+} from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
 import { IconSearch } from '@tabler/icons-react';
 import type { Schemas } from '@orudesk/api-client';
@@ -6,6 +17,7 @@ import { useMemo, useState } from 'react';
 import { usePageTitle } from '../layout/usePageTitle';
 import { useOrgTree } from '../queries/orgUnits';
 import { useUsers } from '../queries/users';
+import { RolesDialog } from '../users/RolesDialog';
 import { flatten } from '../units/accessibleUnits';
 
 /** Who can log in to this tenant, and what each person may do where. Admins only. */
@@ -16,6 +28,8 @@ export function UsersPage() {
   const [debounced] = useDebouncedValue(search.trim(), 300);
   const users = useUsers(debounced);
   const unitName = useUnitNames();
+  // The id, not the user: after a change the list is refetched, and the dialog shows the fresh grants
+  const [editing, setEditing] = useState<string | null>(null);
 
   const rows = users.data?.pages.flatMap((page) => page.items) ?? [];
 
@@ -37,13 +51,16 @@ export function UsersPage() {
 
       {/* Narrower than minWidth (a phone), the table scrolls sideways rather than squeezing the badges */}
       {rows.length > 0 && (
-        <Table.ScrollContainer minWidth={640}>
+        <Table.ScrollContainer minWidth={760}>
           <Table striped highlightOnHover>
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>Email</Table.Th>
                 <Table.Th>Status</Table.Th>
                 <Table.Th>Roles</Table.Th>
+                <Table.Th>
+                  <VisuallyHidden>Actions</VisuallyHidden>
+                </Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
@@ -71,6 +88,16 @@ export function UsersPage() {
                       ))}
                     </Group>
                   </Table.Td>
+                  <Table.Td ta="right">
+                    <Button
+                      variant="subtle"
+                      size="xs"
+                      aria-label={`Manage roles of ${user.email}`}
+                      onClick={() => setEditing(user.id)}
+                    >
+                      Manage roles
+                    </Button>
+                  </Table.Td>
                 </Table.Tr>
               ))}
             </Table.Tbody>
@@ -89,6 +116,11 @@ export function UsersPage() {
           </Button>
         </Group>
       )}
+
+      <RolesDialog
+        user={rows.find((user) => user.id === editing) ?? null}
+        onClose={() => setEditing(null)}
+      />
     </Stack>
   );
 }

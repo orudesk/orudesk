@@ -25,12 +25,13 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/** The user list and the role list, through the whole app against PostgreSQL. */
+/** The user list, the role list and taking roles away, through the whole app against PostgreSQL. */
 @SpringBootTest
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
@@ -123,6 +124,33 @@ class UserDirectoryIntegrationTest {
         mockMvc.perform(get("/api/v1/roles").header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.code == 'ADMIN')].name").isNotEmpty());
+    }
+
+    @Test
+    void aRevokedRoleIsGoneFromTheUsersProfileAtOnce() throws Exception {
+        UserId anna = register(DEMO, "test-dir-anna@orudesk.org");
+        assignRole.assignRole(anna, RoleCode.ADMIN);
+        String annasToken = login("test-dir-anna@orudesk.org");
+        mockMvc.perform(get("/api/v1/users/me").header("Authorization", "Bearer " + annasToken))   // now cached
+                .andExpect(jsonPath("$.grants.length()").value(2));
+
+        mockMvc.perform(delete("/api/v1/users/{id}/roles/{role}", anna.value(), "ADMIN")
+                        .header("Authorization", "Bearer " + login("test-dir-admin@orudesk.org")))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/v1/users/me").header("Authorization", "Bearer " + annasToken))
+                .andExpect(jsonPath("$.grants[*].role").value(contains("USER")));
+    }
+
+    @Test
+    void anAdminCannotLockThemselfOut() throws Exception {
+        String token = login("test-dir-admin@orudesk.org");
+        String me = JsonPath.read(mockMvc.perform(get("/api/v1/users/me").header("Authorization", "Bearer " + token))
+                .andReturn().getResponse().getContentAsString(), "$.id");
+
+        mockMvc.perform(delete("/api/v1/users/{id}/roles/{role}", me, "ADMIN").header("Authorization", "Bearer " + token))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.title").value("Role change not allowed"));
     }
 
     private UserId register(TenantId tenant, String email) {
