@@ -18,9 +18,12 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -88,6 +91,38 @@ class PeopleIntegrationTest {
                 .andExpect(status().isNotFound());
     }
 
+    @Test
+    void searchPagesThroughMatchesInNameOrderAndStaysInsideTheTenant() throws Exception {
+        String demo = login("test-demo-admin@orudesk.org");
+        for (String first : List.of("Chitra", "Asha", "Bina")) {
+            registerNamed(demo, first, "Test-Rao");
+        }
+        registerNamed(login("test-acme-admin@orudesk.org"), "Deepa", "Test-Rao");   // another tenant
+
+        String page1 = mockMvc.perform(get("/api/v1/people").param("q", "test-rao").param("size", "2")
+                        .header("Authorization", "Bearer " + demo))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[*].firstName").value(contains("Asha", "Bina")))
+                .andReturn().getResponse().getContentAsString();
+        String cursor = JsonPath.read(page1, "$.nextCursor");
+
+        mockMvc.perform(get("/api/v1/people").param("q", "test-rao").param("size", "2").param("after", cursor)
+                        .header("Authorization", "Bearer " + demo))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[*].firstName").value(contains("Chitra")))   // never Deepa
+                .andExpect(jsonPath("$.nextCursor").value(nullValue()));
+    }
+
+    @Test
+    void wildcardsInTheSearchTextAreTakenLiterally() throws Exception {
+        String token = login("test-demo-admin@orudesk.org");
+        registerNamed(token, "Asha", "Test-Rao");
+
+        mockMvc.perform(get("/api/v1/people").param("q", "t_st").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items").isEmpty());
+    }
+
     private String register(String token) throws Exception {
         String json = mockMvc.perform(post("/api/v1/people")
                         .header("Authorization", "Bearer " + token)
@@ -98,6 +133,14 @@ class PeopleIntegrationTest {
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
         return JsonPath.read(json, "$.id");
+    }
+
+    private void registerNamed(String token, String firstName, String lastName) throws Exception {
+        mockMvc.perform(post("/api/v1/people")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"firstName\": \"" + firstName + "\", \"lastName\": \"" + lastName + "\"}"))
+                .andExpect(status().isCreated());
     }
 
     private String login(String email) throws Exception {

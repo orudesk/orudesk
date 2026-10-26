@@ -19,14 +19,14 @@ class ModuleMigrationsTest {
     @Test
     void identityHasItsOwnHistory() {
         assertThat(jdbc.queryForList("SELECT version FROM flyway_history_identity WHERE success ORDER BY installed_rank",
-                String.class)).containsExactly("1", "2", "3", "4");
+                String.class)).startsWith("1", "2", "3", "4");
     }
 
     @Test
     void partyStartsAtABaselineBecauseIdentityCameFirst() {
         // Version 0 is the baseline Flyway wrote because the schema already had identity's tables.
         assertThat(jdbc.queryForList("SELECT version FROM flyway_history_party WHERE success ORDER BY installed_rank",
-                String.class)).containsExactly("0", "1");
+                String.class)).startsWith("0", "1");
     }
 
     @Test

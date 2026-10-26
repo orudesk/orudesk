@@ -36,6 +36,10 @@ class PersonJpaEntity {
     @Column(length = 320)
     private String email;
 
+    // Computed by PostgreSQL (a generated column): read it in queries, never write it
+    @Column(name = "search_text", insertable = false, updatable = false)
+    private String searchText;
+
     protected PersonJpaEntity() {
         // JPA needs a no-argument constructor
     }
