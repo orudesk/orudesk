@@ -25,7 +25,7 @@ const failures: Record<Exclude<LoginResult, { ok: true }>['reason'], string> = {
 
 export function LoginPage() {
   usePageTitle('Log in');
-  const { status, login } = useAuth();
+  const { status, endReason, login } = useAuth();
   const [searchParams] = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -67,6 +67,13 @@ export function LoginPage() {
               autoComplete="current-password"
               required
             />
+            {!error && endReason && (
+              <Alert color="blue" role="status">
+                {endReason === 'expired'
+                  ? 'Your session has ended. Please log in again.'
+                  : "Can't reach Orudesk right now, so you're logged out until it's back."}
+              </Alert>
+            )}
             {error && (
               <Alert color="red" icon={<IconAlertCircle size={18} />} role="alert">
                 {error}

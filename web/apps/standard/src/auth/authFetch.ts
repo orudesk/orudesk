@@ -4,11 +4,14 @@ import type { AuthSession } from './session';
  * The fetch the app's API client uses: adds the access token to every request, and when the API still answers
  * 401 (the token was revoked, or the clock is off), refreshes once and tries again.
  */
-export function authFetch(session: AuthSession): (request: Request) => Promise<Response> {
+export function authFetch(
+  session: AuthSession,
+  next: (request: Request) => Promise<Response> = (request) => globalThis.fetch(request),
+): (request: Request) => Promise<Response> {
   async function send(request: Request): Promise<Response> {
     const token = await session.validAccessToken();
     if (token) request.headers.set('Authorization', `Bearer ${token}`);
-    return globalThis.fetch(request);
+    return next(request);
   }
 
   return async (request) => {

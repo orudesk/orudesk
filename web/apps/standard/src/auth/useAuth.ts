@@ -5,5 +5,11 @@ import { useServices } from '../ServicesContext';
 export function useAuth() {
   const { session } = useServices();
   const status = useSyncExternalStore(session.subscribe, session.getStatus);
-  return { status, login: session.login, logout: session.logout };
+  // Read during render: it changes only together with the status, which is what triggers the re-render.
+  return {
+    status,
+    endReason: session.getEndReason(),
+    login: session.login,
+    logout: session.logout,
+  };
 }

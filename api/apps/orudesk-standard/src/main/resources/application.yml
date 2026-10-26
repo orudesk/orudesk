@@ -16,6 +16,10 @@ spring:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:orudesk}
     username: ${DB_USERNAME:orudesk_app}
     password: ${DB_PASSWORD}
+    hikari:
+      # How long a request waits for a free connection. The default, 30 s, means a user stares at a spinner for
+      # half a minute when the database is down; 5 s fails fast with a 503 the web app explains.
+      connection-timeout: 5000   # milliseconds: Hikari binds a plain number, not "5s"
 
   jpa:
     hibernate:

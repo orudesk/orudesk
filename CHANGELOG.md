@@ -21,10 +21,14 @@ Every release of the Orudesk core, newest first. The format follows
   rule as assigning about who may do it. 409 if the user would be left without a role, or if an admin tries to
   remove their own tenant-wide ADMIN role.
 - Web app: sign-in, the app shell, the org unit switcher, a Users screen for admins where they give and
-  take away roles, and People screens (search, add with the server's field errors, one person's page).
+  take away roles, and People screens (search, add with the server's field errors, one person's page), a banner while the API is down, error pages
+  that keep the menu, and a notice when the session has ended.
 
 ### Changed
 
+- A database that goes away mid-request, or a pool that can't get a connection, now answers 503 with
+  `Retry-After` (it was a 500 without a problem body). The standard app waits at most 5 s for a database
+  connection (`spring.datasource.hikari.connection-timeout`), not 30 s.
 - The contract says 201 Created (not 200) for `POST /api/v1/auth/register`, `/api/v1/org-units` and
   `/api/v1/people`, as the API has always answered.
 - Assigning a role to a disabled user answers 409 "Role change not allowed" instead of 500.

@@ -90,4 +90,56 @@ describe('AuthSession', () => {
     expect(session.getStatus()).toBe('signedOut');
     expect(await session.validAccessToken()).toBeNull();
   });
+
+  describe('when a refresh fails', () => {
+    // Logged in with a token that has already expired, so the next request must refresh
+    async function loggedInThenExpired() {
+      let time = 0;
+      const session = newSession(() => time);
+      fakeApi({ 'POST /api/v1/auth/login': () => tokens('first', 60) });
+      await session.login('ck@orudesk.org', 'secret-password');
+      time = 61_000;
+      return session;
+    }
+
+    it('logs out and says the session expired when the API refuses the cookie', async () => {
+      const session = await loggedInThenExpired();
+      fakeApi({ 'POST /api/v1/auth/refresh': () => json({ title: 'Invalid refresh token' }, 401) });
+
+      expect(await session.validAccessToken()).toBeNull();
+
+      expect(session.getStatus()).toBe('signedOut');
+      expect(session.getEndReason()).toBe('expired');
+    });
+
+    it('stays logged in while the API is down, and carries on when it is back', async () => {
+      const session = await loggedInThenExpired();
+      fakeApi({ 'POST /api/v1/auth/refresh': () => json({ title: 'Service unavailable' }, 503) });
+
+      expect(await session.validAccessToken()).toBeNull();
+      expect(session.getStatus()).toBe('signedIn');
+
+      fakeApi({ 'POST /api/v1/auth/refresh': () => tokens('after-outage') });
+      expect(await session.validAccessToken()).toBe('after-outage');
+    });
+
+    it('shows the login page with the reason when the API is unreachable at page load', async () => {
+      vi.stubGlobal('fetch', () => Promise.reject(new TypeError('Failed to fetch')));
+      const session = newSession();
+
+      await session.restore();
+
+      expect(session.getStatus()).toBe('signedOut');
+      expect(session.getEndReason()).toBe('unreachable');
+    });
+
+    it('gives no reason after a plain logout', async () => {
+      const session = await loggedInThenExpired();
+      fakeApi({ 'POST /api/v1/auth/logout': () => new Response(null, { status: 204 }) });
+
+      await session.logout();
+
+      expect(session.getEndReason()).toBeNull();
+    });
+  });
 });

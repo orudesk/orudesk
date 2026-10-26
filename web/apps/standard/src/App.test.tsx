@@ -142,4 +142,39 @@ describe('App', () => {
     expect(last?.headers.get('X-Org-Unit')).toBe('south');
     expect(localStorage.getItem('orudesk.orgUnit')).toBe('south');
   });
+
+  it('shows a banner while the API is down, and hides it when it answers again', async () => {
+    let down = true;
+    fakeApi({
+      'POST /api/v1/auth/refresh': () => tokens(),
+      'GET /api/v1/users/me': () =>
+        down ? json({ title: 'Service unavailable' }, 503, { 'Retry-After': '30' }) : json(me),
+    });
+    render(<App services={createServices()} />);
+
+    expect(await screen.findByRole('status')).toHaveTextContent('try again in about 30 seconds');
+
+    down = false;
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
+
+    expect(await screen.findByText('ck@orudesk.org')).toBeInTheDocument();
+    expect(screen.queryByText(/having trouble/)).not.toBeInTheDocument();
+  });
+
+  it('says so when the session has ended', async () => {
+    const services = createServices();
+    fakeApi({
+      'POST /api/v1/auth/refresh': () => tokens('short', 1), // expires at once: the next request refreshes
+      'GET /api/v1/users/me': () => json(me),
+    });
+    render(<App services={services} />);
+    await screen.findByText('ck@orudesk.org');
+
+    fakeApi({ 'POST /api/v1/auth/refresh': () => json({ title: 'Invalid refresh token' }, 401) });
+    await services.session.validAccessToken();
+
+    expect(
+      await screen.findByText('Your session has ended. Please log in again.'),
+    ).toBeInTheDocument();
+  });
 });

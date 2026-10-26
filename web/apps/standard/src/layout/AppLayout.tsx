@@ -3,6 +3,7 @@ import { useDisclosure } from '@mantine/hooks';
 import { Link, Outlet, useLocation } from 'react-router';
 import { ColorSchemeToggle } from './ColorSchemeToggle';
 import { useMe } from '../queries/me';
+import { ServiceBanner } from '../status/ServiceBanner';
 import { UnitSwitcher } from '../units/UnitSwitcher';
 import { navigation } from './navigation';
 import { UserMenu } from './UserMenu';
@@ -66,6 +67,7 @@ export function AppLayout() {
       </AppShell.Navbar>
 
       <AppShell.Main id="main" tabIndex={-1}>
+        <ServiceBanner />
         <Outlet />
       </AppShell.Main>
     </AppShell>

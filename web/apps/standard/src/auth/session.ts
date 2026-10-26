@@ -2,6 +2,9 @@ import type { OrudeskClient, Schemas } from '@orudesk/api-client';
 
 export type SessionStatus = 'restoring' | 'signedIn' | 'signedOut';
 
+/** Why the last session ended, for the login page to explain. null: never started, or the user logged out. */
+export type EndReason = 'expired' | 'unreachable' | null;
+
 export type LoginResult =
   | { ok: true }
   | { ok: false; reason: 'credentials' | 'unavailable' | 'network' | 'other'; message?: string };
@@ -26,6 +29,7 @@ export class AuthSession {
   private accessToken: string | null = null;
   private expiresAt = 0;
   private status: SessionStatus = 'restoring';
+  private endReason: EndReason = null;
   private refreshing: Promise<boolean> | null = null;
   private readonly listeners = new Set<() => void>();
   private readonly channel: BroadcastChannel | null;
@@ -42,13 +46,15 @@ export class AuthSession {
     this.channel =
       typeof BroadcastChannel === 'undefined' ? null : new BroadcastChannel('orudesk-auth');
     this.channel?.addEventListener('message', (event: MessageEvent) => {
-      if (event.data === 'logout') this.clear();
+      if (event.data === 'logout') this.clear(null);
     });
   }
 
   // Arrow functions: React calls these without `this` (useSyncExternalStore, onClick handlers).
 
   getStatus = (): SessionStatus => this.status;
+
+  getEndReason = (): EndReason => this.endReason;
 
   subscribe = (listener: () => void): (() => void) => {
     this.listeners.add(listener);
@@ -103,34 +109,51 @@ export class AuthSession {
     } catch {
       // Offline: forget the token locally anyway. The cookie expires by itself.
     } finally {
-      this.clear();
+      this.clear(null);
       this.channel?.postMessage('logout');
     }
   };
 
+  /**
+   * Two kinds of failure, handled differently. The API said no (401, 400): the session is over, log out. The
+   * API didn't answer properly (network error, 503, 500): nothing is known about the session, so a logged-in
+   * user stays logged in and the requests fail until the API is back (the banner says so). Logging people out
+   * because Redis restarted would lose their unsaved work for nothing.
+   */
   private async refreshNow(): Promise<boolean> {
+    let status: number | null = null;
     try {
-      const { data } = await this.authApi.POST('/api/v1/auth/refresh', { params: COOKIE });
+      const { data, response } = await this.authApi.POST('/api/v1/auth/refresh', {
+        params: COOKIE,
+      });
       if (data) {
         this.accept(data);
         return true;
       }
+      status = response.status;
     } catch {
-      // Network error: treated like an expired session for now (Day 36 tells the two apart).
+      // no answer: status stays null
     }
-    this.clear();
+    const refused = status !== null && status < 500;
+    if (refused) {
+      this.clear(this.status === 'signedIn' ? 'expired' : null);
+    } else if (this.status === 'restoring') {
+      this.clear('unreachable'); // at page load there's no session to keep, so show the login page and why
+    }
     return false;
   }
 
   private accept(tokens: Schemas['TokenResponse']): void {
     this.accessToken = tokens.accessToken;
     this.expiresAt = this.now() + tokens.expiresIn * 1000;
+    this.endReason = null;
     this.setStatus('signedIn');
   }
 
-  private clear(): void {
+  private clear(reason: EndReason): void {
     this.accessToken = null;
     this.expiresAt = 0;
+    this.endReason = reason; // set before the listeners run, so the login page reads it in the same render
     this.setStatus('signedOut');
   }
 

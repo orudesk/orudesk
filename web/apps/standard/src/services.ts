@@ -2,6 +2,7 @@ import { createOrudeskClient, type OrudeskClient } from '@orudesk/api-client';
 import { QueryClient } from '@tanstack/react-query';
 import { authFetch } from './auth/authFetch';
 import { AuthSession } from './auth/session';
+import { ServiceStatus, withServiceStatus } from './status/serviceStatus';
 import { UnitStore } from './units/unitStore';
 import { withOrgUnit } from './units/withOrgUnit';
 
@@ -13,17 +14,22 @@ import { withOrgUnit } from './units/withOrgUnit';
 export interface Services {
   session: AuthSession;
   units: UnitStore;
+  serviceStatus: ServiceStatus;
   api: OrudeskClient;
   queryClient: QueryClient;
 }
 
 export function createServices(): Services {
   // `fetch` is looked up on every call rather than once, so tests can replace it with vi.stubGlobal.
-  const plainFetch = (request: Request) => globalThis.fetch(request);
+  const serviceStatus = new ServiceStatus();
+  const plainFetch = withServiceStatus(serviceStatus, (request) => globalThis.fetch(request));
   const session = new AuthSession(createOrudeskClient({ fetch: plainFetch }));
   const units = new UnitStore();
-  // Each request passes through: add X-Org-Unit, then add the token (and retry once on 401), then fetch.
-  const api = createOrudeskClient({ fetch: withOrgUnit(units, authFetch(session)) });
+  // Each request passes through: add X-Org-Unit, then add the token (and retry once on 401), then note
+  // whether the API answered, then fetch.
+  const api = createOrudeskClient({
+    fetch: withOrgUnit(units, authFetch(session, plainFetch)),
+  });
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
   });
@@ -31,5 +37,5 @@ export function createServices(): Services {
   session.subscribe(() => {
     if (session.getStatus() === 'signedOut') queryClient.clear();
   });
-  return { session, units, api, queryClient };
+  return { session, units, serviceStatus, api, queryClient };
 }
