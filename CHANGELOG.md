@@ -4,6 +4,8 @@ Every release of the Orudesk core, newest first. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html): before 1.0.0, a minor release may break things.
 
+## [Unreleased]
+
 ## [1.0.0] - 2026-10-26
 
 Backend release 1. From this version on, the public API (the HTTP endpoints, and the published modules'
