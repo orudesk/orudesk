@@ -1,8 +1,12 @@
+import { MantineProvider } from '@mantine/core';
+import '@mantine/core/styles.css';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router';
 import { routes } from './routes';
 import type { Services } from './services';
+import './styles.css';
+import { theme } from './theme';
 import { ServicesContext } from './ServicesContext';
 
 export function App({ services }: { services: Services }) {
@@ -14,10 +18,12 @@ export function App({ services }: { services: Services }) {
   }, [services.session]);
 
   return (
-    <ServicesContext value={services}>
-      <QueryClientProvider client={services.queryClient}>
-        <RouterProvider router={router} />
-      </QueryClientProvider>
-    </ServicesContext>
+    <MantineProvider theme={theme} defaultColorScheme="auto">
+      <ServicesContext value={services}>
+        <QueryClientProvider client={services.queryClient}>
+          <RouterProvider router={router} />
+        </QueryClientProvider>
+      </ServicesContext>
+    </MantineProvider>
   );
 }

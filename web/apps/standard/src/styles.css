@@ -1,0 +1,13 @@
+/* Hidden until it gets keyboard focus, then shown at the top left. */
+.skip-link {
+  position: absolute;
+  left: -10000px;
+  z-index: 1000;
+}
+
+.skip-link:focus {
+  left: 1rem;
+  top: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--mantine-color-body);
+}

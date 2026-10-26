@@ -1,32 +1,21 @@
-import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '../auth/useAuth';
-import { useApi } from '../ServicesContext';
+import { Loader, Stack, Text, Title } from '@mantine/core';
+import { usePageTitle } from '../layout/usePageTitle';
+import { useMe } from '../queries/me';
 
 export function HomePage() {
-  const api = useApi();
-  const { logout } = useAuth();
-  const me = useQuery({
-    queryKey: ['users', 'me'],
-    queryFn: async () => {
-      const { data, error } = await api.GET('/api/v1/users/me');
-      if (error) throw new Error('Could not load your profile');
-      return data;
-    },
-  });
+  usePageTitle('Home');
+  const me = useMe();
 
   return (
-    <main>
-      <h1>Orudesk</h1>
-      {me.isPending && <p role="status">Loading...</p>}
-      {me.isError && <p role="alert">{me.error.message}</p>}
+    <Stack>
+      <Title order={1}>Home</Title>
+      {me.isPending && <Loader size="sm" aria-label="Loading" />}
+      {me.isError && <Text role="alert">{me.error.message}</Text>}
       {me.data && (
-        <p>
+        <Text>
           Signed in as <strong>{me.data.email}</strong> ({me.data.roles.join(', ') || 'no roles'})
-        </p>
+        </Text>
       )}
-      <button type="button" onClick={() => void logout()}>
-        Log out
-      </button>
-    </main>
+    </Stack>
   );
 }

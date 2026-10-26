@@ -1,3 +1,4 @@
+import { Center, Loader } from '@mantine/core';
 import { Navigate, Outlet, useLocation } from 'react-router';
 import { useAuth } from './useAuth';
 
@@ -7,7 +8,11 @@ export function RequireAuth() {
   const location = useLocation();
 
   if (status === 'restoring') {
-    return <p role="status">Loading...</p>;
+    return (
+      <Center mih="100vh">
+        <Loader aria-label="Loading" />
+      </Center>
+    );
   }
   if (status === 'signedOut') {
     const from = location.pathname + location.search;
