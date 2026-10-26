@@ -1,0 +1,93 @@
+import { createOrudeskClient } from '@orudesk/api-client';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { fakeApi, json, tokens } from '../test/fakeApi';
+import { AuthSession } from './session';
+
+const newSession = (now: () => number = Date.now) =>
+  new AuthSession(createOrudeskClient({ fetch: (r) => globalThis.fetch(r) }), now);
+
+describe('AuthSession', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('logs in, asking for the refresh token as a cookie', async () => {
+    const api = fakeApi({ 'POST /api/v1/auth/login': () => tokens('the-access-token') });
+    const session = newSession();
+
+    expect(await session.login('ck@orudesk.org', 'secret-password')).toEqual({ ok: true });
+
+    expect(session.getStatus()).toBe('signedIn');
+    expect(await session.validAccessToken()).toBe('the-access-token');
+    expect(api.requests[0]?.headers.get('X-Refresh-Token-Transport')).toBe('cookie');
+  });
+
+  it('says why a login failed', async () => {
+    fakeApi({ 'POST /api/v1/auth/login': () => json({ title: 'Login failed' }, 401) });
+    const session = newSession();
+
+    expect(await session.login('ck@orudesk.org', 'wrong')).toEqual({
+      ok: false,
+      reason: 'credentials',
+    });
+  });
+
+  it('restores the session from the refresh cookie after a page reload', async () => {
+    fakeApi({ 'POST /api/v1/auth/refresh': () => tokens('restored') });
+    const session = newSession();
+    expect(session.getStatus()).toBe('restoring');
+
+    await session.restore();
+
+    expect(session.getStatus()).toBe('signedIn');
+    expect(await session.validAccessToken()).toBe('restored');
+  });
+
+  it('is logged out when there is no valid refresh cookie', async () => {
+    fakeApi({ 'POST /api/v1/auth/refresh': () => json({ title: 'Invalid refresh token' }, 401) });
+    const session = newSession();
+
+    await session.restore();
+
+    expect(session.getStatus()).toBe('signedOut');
+    expect(await session.validAccessToken()).toBeNull();
+  });
+
+  it('sends one refresh when many requests need a token at once', async () => {
+    const api = fakeApi({ 'POST /api/v1/auth/refresh': () => tokens('fresh') });
+    const session = newSession();
+
+    const results = await Promise.all([1, 2, 3, 4, 5].map(() => session.validAccessToken()));
+
+    expect(results).toEqual(['fresh', 'fresh', 'fresh', 'fresh', 'fresh']);
+    expect(api.calls('POST /api/v1/auth/refresh')).toBe(1);
+  });
+
+  it('refreshes 30 seconds before the access token expires', async () => {
+    let now = 0;
+    const api = fakeApi({
+      'POST /api/v1/auth/login': () => tokens('first', 900),
+      'POST /api/v1/auth/refresh': () => tokens('second', 900),
+    });
+    const session = newSession(() => now);
+    await session.login('ck@orudesk.org', 'secret-password');
+
+    now = 869_000; // 31 s left
+    expect(await session.validAccessToken()).toBe('first');
+    now = 871_000; // 29 s left
+    expect(await session.validAccessToken()).toBe('second');
+    expect(api.calls('POST /api/v1/auth/refresh')).toBe(1);
+  });
+
+  it('forgets the token on logout, even when the API is unreachable', async () => {
+    fakeApi({
+      'POST /api/v1/auth/login': () => tokens(),
+      'POST /api/v1/auth/logout': () => Promise.reject(new TypeError('Failed to fetch')),
+    });
+    const session = newSession();
+    await session.login('ck@orudesk.org', 'secret-password');
+
+    await session.logout();
+
+    expect(session.getStatus()).toBe('signedOut');
+    expect(await session.validAccessToken()).toBeNull();
+  });
+});

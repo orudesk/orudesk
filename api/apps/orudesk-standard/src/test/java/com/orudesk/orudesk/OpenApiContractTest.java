@@ -50,4 +50,21 @@ class OpenApiContractTest {
         Files.createDirectories(file.getParent());
         Files.writeString(file, json);
     }
+
+    @Test
+    void recordComponentsAreRequiredUnlessNullable() throws Exception {
+        String json = mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        // A response: every field is always there; the @Nullable ones may be null
+        List<String> personRequired = JsonPath.read(json, "$.components.schemas.PersonDetails.required");
+        assertThat(personRequired).containsExactlyInAnyOrder("id", "firstName", "lastName");
+        List<String> phoneTypes = JsonPath.read(json, "$.components.schemas.PersonDetails.properties.phone.type");
+        assertThat(phoneTypes).containsExactlyInAnyOrder("string", "null");
+
+        // A request: the client must send firstName and lastName, and may leave the rest out
+        List<String> registerRequired = JsonPath.read(json, "$.components.schemas.RegisterPersonRequest.required");
+        assertThat(registerRequired).containsExactlyInAnyOrder("firstName", "lastName");
+    }
 }

@@ -47,3 +47,34 @@ orudesk:
       secret: ${ORUDESK_JWT_SECRET}
       access-token-ttl: 15m
       refresh-token-ttl: 14d
+    refresh-cookie:
+      secure: ${ORUDESK_REFRESH_COOKIE_SECURE:true}   # HTTPS only. The local profile turns it off for http://localhost
+  web:
+    # Other origins whose pages may call the API (CORS), comma-separated. Empty: only the same origin.
+    allowed-origins: ${ORUDESK_WEB_ALLOWED_ORIGINS:}
+
+# Actuator: what an orchestrator (Docker, Kubernetes) asks to decide if the app is alive and ready.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info       # nothing else over HTTP: env, beans and heapdump leak secrets
+  endpoint:
+    health:
+      probes:
+        enabled: true               # /actuator/health/liveness and /actuator/health/readiness
+      show-details: never           # anonymous callers see UP or DOWN, not database hostnames
+      group:
+        readiness:
+          include: readinessState, db   # no database, no traffic. Liveness never checks the DB: a DB outage
+                                        # must not make the orchestrator restart every app instance at once.
+  health:
+    redis:
+      enabled: false                # Redis down means 503 on login, not "restart me" or "send no traffic" (Day 12)
+
+# The OpenAPI contract at /v3/api-docs. Sorted and indented, so the copy in web/packages/api-client is the
+# same file on every machine and a contract change shows up as a readable diff in the pull request.
+springdoc:
+  writer-with-order-by-keys: true
+  writer-with-default-pretty-printer: true
+  default-produces-media-type: application/json   # what every endpoint answers with; otherwise "*/*"

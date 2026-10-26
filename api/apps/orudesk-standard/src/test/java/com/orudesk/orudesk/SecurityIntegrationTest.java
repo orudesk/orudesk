@@ -8,6 +8,7 @@ import com.orudesk.orudesk.identity.domain.Email;
 import com.orudesk.orudesk.identity.domain.RoleCode;
 import com.orudesk.orudesk.identity.domain.TenantId;
 import com.orudesk.orudesk.identity.domain.UserId;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import org.springframework.context.annotation.Import;
@@ -134,6 +136,25 @@ class SecurityIntegrationTest {
                 .andExpect(status().isNoContent());
 
         refresh(refreshToken).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void theWebAppsCookieRoundTripRotatesTheTokenLikeTheJsonOne() throws Exception {
+        Cookie first = mockMvc.perform(post("/api/v1/auth/login")
+                        .header("X-Refresh-Token-Transport", "cookie")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\": \"test-user@orudesk.org\", \"password\": \"user-password\"}"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getCookie("orudesk_refresh");
+
+        Cookie second = mockMvc.perform(post("/api/v1/auth/refresh")
+                        .header("X-Refresh-Token-Transport", "cookie").cookie(first))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getCookie("orudesk_refresh");
+
+        assertThat(second.getValue()).isNotEqualTo(first.getValue());
+        mockMvc.perform(post("/api/v1/auth/refresh").header("X-Refresh-Token-Transport", "cookie").cookie(first))
+                .andExpect(status().isUnauthorized());   // the first one was used up
     }
 
     private String login(String email, String password) throws Exception {
