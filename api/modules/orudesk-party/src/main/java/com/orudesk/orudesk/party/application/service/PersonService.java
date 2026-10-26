@@ -70,7 +70,7 @@ public class PersonService implements RegisterPersonUseCase, GetPersonQuery, Sea
         boolean hasMore = found.size() > search.size();
         List<Person> page = hasMore ? found.subList(0, search.size()) : found;
 
-        String nextCursor = hasMore ? PersonCursor.encode(page.get(page.size() - 1)) : null;
+        String nextCursor = hasMore ? PersonCursor.encode(page.getLast()) : null;
         return new PersonPage(page.stream().map(PersonService::toDetails).toList(), nextCursor);
     }
 

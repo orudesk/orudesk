@@ -2,6 +2,11 @@ spring:
   application:
     name: orudesk
 
+  # Java 21+ virtual threads: each request gets a cheap virtual thread instead of one from Tomcat's pool of 200.
+  threads:
+    virtual:
+      enabled: true
+
   # Load a local .env file if there is one (optional: production has no file).
   # [.properties] tells Spring to read it as KEY=value lines.
   config:
