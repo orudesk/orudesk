@@ -4,6 +4,7 @@ import com.orudesk.orudesk.identity.application.port.in.AssignRoleUseCase;
 import com.orudesk.orudesk.identity.application.port.in.GetUserProfileQuery;
 import com.orudesk.orudesk.identity.application.port.in.RegisterUserCommand;
 import com.orudesk.orudesk.identity.application.port.in.RegisterUserUseCase;
+import com.orudesk.orudesk.identity.application.service.UserProfileService;
 import com.orudesk.orudesk.identity.domain.Email;
 import com.orudesk.orudesk.identity.domain.RoleCode;
 import com.orudesk.orudesk.identity.domain.TenantId;
@@ -92,6 +93,6 @@ class ProfileCacheTest {
     }
 
     private String cacheKey() {
-        return "orudesk:cache:user-profiles::" + userId.value();
+        return "orudesk:cache:" + UserProfileService.CACHE + "::" + userId.value();
     }
 }

@@ -1,9 +1,12 @@
 package com.orudesk.orudesk.party.adapter.in.web;
 
 import com.orudesk.orudesk.party.application.port.in.GetPersonQuery;
+import com.orudesk.orudesk.party.application.port.in.PeopleSearch;
 import com.orudesk.orudesk.party.application.port.in.PersonDetails;
+import com.orudesk.orudesk.party.application.port.in.PersonPage;
 import com.orudesk.orudesk.party.application.port.in.RegisterPersonCommand;
 import com.orudesk.orudesk.party.application.port.in.RegisterPersonUseCase;
+import com.orudesk.orudesk.party.application.port.in.SearchPeopleQuery;
 import com.orudesk.orudesk.party.domain.PersonId;
 import com.orudesk.orudesk.party.domain.PersonNotFoundException;
 import com.orudesk.orudesk.shared.adapter.in.security.SecurityConfig;
@@ -17,6 +20,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -44,6 +48,9 @@ class PersonControllerTest {
 
     @MockitoBean
     private GetPersonQuery getPerson;
+
+    @MockitoBean
+    private SearchPeopleQuery searchPeople;
 
     @Test
     void registersAPersonAndReturns201WithItsLocation() throws Exception {
@@ -91,6 +98,26 @@ class PersonControllerTest {
         mockMvc.perform(get("/api/v1/people/{id}", PERSON_ID))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.title").value("Person not found"));
+    }
+
+    @Test
+    void searchesWithDefaultsAndReturnsThePageAndItsCursor() throws Exception {
+        given(searchPeople.search(new PeopleSearch("asha", null, 20))).willReturn(new PersonPage(
+                List.of(new PersonDetails(PERSON_ID, "Asha", "Rao", null, null, null)), "bmV4dA"));
+
+        mockMvc.perform(get("/api/v1/people").param("q", "asha"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].lastName").value("Rao"))
+                .andExpect(jsonPath("$.nextCursor").value("bmV4dA"));
+    }
+
+    @Test
+    void rejectsAPageThatIsTooBigWith400() throws Exception {
+        mockMvc.perform(get("/api/v1/people").param("size", "500"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("size must be between 1 and 100"));
+
+        verify(searchPeople, never()).search(any());
     }
 
     @Test

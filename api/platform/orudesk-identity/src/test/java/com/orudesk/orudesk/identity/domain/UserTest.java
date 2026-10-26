@@ -54,4 +54,18 @@ class UserTest {
         assertThatThrownBy(() -> roles.add(RoleCode.ADMIN))
                 .isInstanceOf(UnsupportedOperationException.class);
     }
+
+    @Test
+    void aScopedRoleIsAGrantButNotATenantWideRole() {
+        User user = User.register(DEMO, new Email("priya@orudesk.org"), new PasswordHash("hashed"));
+        OrgUnitId schoolA = OrgUnitId.newId();
+
+        user.assignRoleAt(RoleCode.ADMIN, schoolA);
+        user.assignRoleAt(RoleCode.ADMIN, schoolA);   // twice is still one grant
+
+        assertThat(user.grants()).containsExactlyInAnyOrder(
+                RoleGrant.tenantWide(RoleCode.USER), RoleGrant.at(RoleCode.ADMIN, schoolA));
+        assertThat(user.roles()).containsExactly(RoleCode.USER);   // only tenant-wide roles go in the token
+        assertThat(user.hasRole(RoleCode.ADMIN)).isFalse();
+    }
 }

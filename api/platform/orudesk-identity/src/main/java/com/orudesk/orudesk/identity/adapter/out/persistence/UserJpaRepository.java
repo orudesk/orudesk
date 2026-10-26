@@ -10,10 +10,10 @@ interface UserJpaRepository extends JpaRepository<UserJpaEntity, UUID> {
 
     boolean existsByEmail(String email);
 
-    /** Loads the user and its roles in one query (a JOIN), instead of one query each. */
-    @EntityGraph(attributePaths = "roles")
+    /** Loads the user, its grants and their roles in one query (JOINs), instead of one query each. */
+    @EntityGraph(attributePaths = {"grants", "grants.role"})
     Optional<UserJpaEntity> findWithRolesById(UUID id);
 
-    @EntityGraph(attributePaths = "roles")
+    @EntityGraph(attributePaths = {"grants", "grants.role"})
     Optional<UserJpaEntity> findWithRolesByEmail(String email);
 }

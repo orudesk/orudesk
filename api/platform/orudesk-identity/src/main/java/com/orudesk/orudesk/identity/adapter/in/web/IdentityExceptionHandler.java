@@ -3,6 +3,9 @@ package com.orudesk.orudesk.identity.adapter.in.web;
 import com.orudesk.orudesk.identity.domain.EmailAlreadyRegisteredException;
 import com.orudesk.orudesk.identity.domain.InvalidCredentialsException;
 import com.orudesk.orudesk.identity.domain.InvalidRefreshTokenException;
+import com.orudesk.orudesk.identity.domain.MissingOrgUnitException;
+import com.orudesk.orudesk.identity.domain.OrgUnitCodeTakenException;
+import com.orudesk.orudesk.identity.domain.OrgUnitNotFoundException;
 import com.orudesk.orudesk.identity.domain.UnknownRoleException;
 import com.orudesk.orudesk.identity.domain.UserNotFoundException;
 import org.springframework.http.HttpStatus;
@@ -37,6 +40,21 @@ class IdentityExceptionHandler {
     @ExceptionHandler(InvalidRefreshTokenException.class)
     ProblemDetail invalidRefreshToken(InvalidRefreshTokenException e) {
         return problem(HttpStatus.UNAUTHORIZED, "Invalid refresh token", e.getMessage());
+    }
+
+    @ExceptionHandler(OrgUnitNotFoundException.class)
+    ProblemDetail orgUnitNotFound(OrgUnitNotFoundException e) {
+        return problem(HttpStatus.NOT_FOUND, "Org unit not found", e.getMessage());
+    }
+
+    @ExceptionHandler(OrgUnitCodeTakenException.class)
+    ProblemDetail orgUnitCodeTaken(OrgUnitCodeTakenException e) {
+        return problem(HttpStatus.CONFLICT, "Org unit code taken", e.getMessage());
+    }
+
+    @ExceptionHandler(MissingOrgUnitException.class)
+    ProblemDetail missingOrgUnit(MissingOrgUnitException e) {
+        return problem(HttpStatus.BAD_REQUEST, "Org unit missing", e.getMessage());
     }
 
     private static ProblemDetail problem(HttpStatus status, String title, String detail) {

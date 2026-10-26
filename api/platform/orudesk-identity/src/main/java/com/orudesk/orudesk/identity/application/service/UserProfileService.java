@@ -3,6 +3,7 @@ package com.orudesk.orudesk.identity.application.service;
 import com.orudesk.orudesk.identity.application.port.in.GetUserProfileQuery;
 import com.orudesk.orudesk.identity.application.port.in.UserProfile;
 import com.orudesk.orudesk.identity.application.port.out.LoadUserPort;
+import com.orudesk.orudesk.identity.domain.OrgUnitId;
 import com.orudesk.orudesk.identity.domain.RoleCode;
 import com.orudesk.orudesk.identity.domain.User;
 import com.orudesk.orudesk.identity.domain.UserId;
@@ -11,11 +12,15 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
+
 @Service
 @Transactional(readOnly = true)
 public class UserProfileService implements GetUserProfileQuery {
 
-    public static final String CACHE = "user-profiles";
+    // "-v2": UserProfile gained a field on Day 19. A new cache name means old entries, written in the old
+    // shape, are never read back; they expire on their own.
+    public static final String CACHE = "user-profiles-v2";
 
     private final LoadUserPort loadUserPort;
 
@@ -33,6 +38,10 @@ public class UserProfileService implements GetUserProfileQuery {
                 user.tenantId().value(),
                 user.email().value(),
                 user.roles().stream().map(RoleCode::value).sorted().toList(),
+                user.grants().stream()
+                        .map(grant -> new UserProfile.Grant(grant.role().value(), grant.scopeId().map(OrgUnitId::value).orElse(null)))
+                        .sorted(Comparator.comparing(UserProfile.Grant::role))
+                        .toList(),
                 user.isEnabled());
     }
 }

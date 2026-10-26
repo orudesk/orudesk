@@ -8,8 +8,12 @@ version = '0.0.1-SNAPSHOT'
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
+        languageVersion = JavaLanguageVersion.of(25)
     }
+}
+
+configurations {
+    mockitoAgent   // just the Mockito jar, to load it as a Java agent when the tests start
 }
 
 dependencies {
@@ -20,6 +24,9 @@ dependencies {
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    mockitoAgent springBoot
+    mockitoAgent('org.mockito:mockito-core') { transitive = false }
 }
 
 tasks.named('compileJava') {
@@ -28,4 +35,7 @@ tasks.named('compileJava') {
 
 tasks.named('test') {
     useJUnitPlatform()
+    // Load Mockito's agent up front. Attaching it later, while the tests run, makes Java 21+ print a warning,
+    // and a future Java will refuse it.
+    jvmArgs "-javaagent:${configurations.mockitoAgent.asPath}"
 }

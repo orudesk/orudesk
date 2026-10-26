@@ -36,7 +36,8 @@ class UserProfileControllerTest {
     @Test
     void returnsTheProfileOfTheLoggedInUser() throws Exception {
         given(getUserProfile.getProfile(new UserId(USER_ID))).willReturn(
-                new UserProfile(USER_ID, TENANT_ID, "asha@orudesk.org", List.of("USER"), true));
+                new UserProfile(USER_ID, TENANT_ID, "asha@orudesk.org", List.of("USER"),
+                        List.of(new UserProfile.Grant("USER", null)), true));
 
         // jwt() pretends a valid token was sent; subject() is the "sub" claim, the user id
         mockMvc.perform(get("/api/v1/users/me").with(jwt().jwt(token -> token.subject(USER_ID.toString()))))

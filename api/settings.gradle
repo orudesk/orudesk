@@ -3,6 +3,11 @@ pluginManagement {
     includeBuild 'build-logic'   // our own Gradle plugins: the shared conventions every module applies
 }
 
+plugins {
+    // If this machine has no JDK 25, Gradle downloads one (from foojay.io) instead of failing the build
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
 dependencyResolutionManagement {
     repositories {
         mavenCentral()
