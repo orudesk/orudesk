@@ -1,6 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { coreModule } from '../coreModule';
 import { App } from '../App';
 import { createServices } from '../services';
 import { fakeApi, json, tokens } from '../test/fakeApi';
@@ -31,7 +32,7 @@ function openAt(path: string, handlers: Parameters<typeof fakeApi>[0]) {
       json({ id: 'g', name: 'Group', code: 'G', type: 'GROUP', children: [] }),
     ...handlers,
   });
-  render(<App services={createServices()} />);
+  render(<App services={createServices()} modules={[coreModule]} />);
   return api;
 }
 

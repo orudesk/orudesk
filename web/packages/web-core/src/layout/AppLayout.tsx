@@ -5,7 +5,7 @@ import { ColorSchemeToggle } from './ColorSchemeToggle';
 import { useMe } from '../queries/me';
 import { ServiceBanner } from '../status/ServiceBanner';
 import { UnitSwitcher } from '../units/UnitSwitcher';
-import { navigation } from './navigation';
+import { useNavigation } from './NavigationContext';
 import { UserMenu } from './UserMenu';
 
 /**
@@ -16,6 +16,7 @@ export function AppLayout() {
   const [menuOpen, menu] = useDisclosure(false);
   const { pathname } = useLocation();
   const me = useMe();
+  const navigation = useNavigation();
   const items = navigation.filter((item) => !item.role || me.data?.roles.includes(item.role));
 
   return (

@@ -1,6 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { coreModule } from '../coreModule';
 import { App } from '../App';
 import { createServices } from '../services';
 import { fakeApi, json, tokens } from '../test/fakeApi';
@@ -35,7 +36,7 @@ function openUsersPage(handlers: Parameters<typeof fakeApi>[0]) {
     'GET /api/v1/org-units': () => json(tree),
     ...handlers,
   });
-  render(<App services={createServices()} />);
+  render(<App services={createServices()} modules={[coreModule]} />);
   return api;
 }
 

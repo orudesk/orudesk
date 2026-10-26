@@ -23,6 +23,8 @@ Every release of the Orudesk core, newest first. The format follows
 - Web app: sign-in, the app shell, the org unit switcher, a Users screen for admins where they give and
   take away roles, and People screens (search, add with the server's field errors, one person's page), a banner while the API is down, error pages
   that keep the menu, and a notice when the session has ended.
+- `web/packages/web-core`: the web app's shell and core screens as a package, and a module contract
+  (`OrudeskModule`: routes and menu entries) through which editions add their own screens.
 
 ### Changed
 

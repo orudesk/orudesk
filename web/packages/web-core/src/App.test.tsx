@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { coreModule } from './coreModule';
 import { App } from './App';
 import { createServices } from './services';
 import { fakeApi, json, tokens } from './test/fakeApi';
@@ -27,7 +28,7 @@ describe('App', () => {
       'POST /api/v1/auth/login': () => tokens(),
       'GET /api/v1/users/me': () => json(me),
     });
-    render(<App services={createServices()} />);
+    render(<App services={createServices()} modules={[coreModule]} />);
 
     expect(await screen.findByRole('heading', { name: 'Log in to Orudesk' })).toBeInTheDocument();
     await userEvent.type(screen.getByLabelText(/Email/), 'ck@orudesk.org');
@@ -43,7 +44,7 @@ describe('App', () => {
       'POST /api/v1/auth/refresh': () => tokens(),
       'GET /api/v1/users/me': () => json(me),
     });
-    render(<App services={createServices()} />);
+    render(<App services={createServices()} modules={[coreModule]} />);
 
     expect(await screen.findByText('ck@orudesk.org')).toBeInTheDocument();
     expect(api.calls('POST /api/v1/auth/login')).toBe(0);
@@ -54,7 +55,7 @@ describe('App', () => {
       'POST /api/v1/auth/refresh': () => json({}, 401),
       'POST /api/v1/auth/login': () => json({ title: 'Login failed' }, 401),
     });
-    render(<App services={createServices()} />);
+    render(<App services={createServices()} modules={[coreModule]} />);
 
     await userEvent.type(await screen.findByLabelText(/Email/), 'ck@orudesk.org');
     await userEvent.type(screen.getByLabelText(/Password/), 'wrong-password');
@@ -70,7 +71,7 @@ describe('App', () => {
       'POST /api/v1/auth/logout': () => new Response(null, { status: 204 }),
     });
     const services = createServices();
-    render(<App services={services} />);
+    render(<App services={services} modules={[coreModule]} />);
 
     await userEvent.click(await screen.findByRole('button', { name: 'Account' }));
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Log out' }));
@@ -85,7 +86,7 @@ describe('App', () => {
       'POST /api/v1/auth/refresh': () => tokens(),
       'GET /api/v1/users/me': () => json(me),
     });
-    render(<App services={createServices()} />);
+    render(<App services={createServices()} modules={[coreModule]} />);
 
     expect(await screen.findByRole('heading', { name: 'Page not found' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/');
@@ -97,7 +98,7 @@ describe('App', () => {
       'POST /api/v1/auth/refresh': () => tokens(),
       'GET /api/v1/users/me': () => json(me),
     });
-    render(<App services={createServices()} />);
+    render(<App services={createServices()} modules={[coreModule]} />);
 
     await userEvent.click(await screen.findByRole('button', { name: 'Switch to dark theme' }));
 
@@ -126,7 +127,7 @@ describe('App', () => {
         return json({ ...unit, roles: id === 'south' ? ['ADMIN', 'TEACHER'] : ['ADMIN'] });
       },
     });
-    render(<App services={createServices()} />);
+    render(<App services={createServices()} modules={[coreModule]} />);
 
     expect(await screen.findByText('Sunrise Group', { selector: 'p' })).toBeInTheDocument();
 
@@ -150,7 +151,7 @@ describe('App', () => {
       'GET /api/v1/users/me': () =>
         down ? json({ title: 'Service unavailable' }, 503, { 'Retry-After': '30' }) : json(me),
     });
-    render(<App services={createServices()} />);
+    render(<App services={createServices()} modules={[coreModule]} />);
 
     expect(await screen.findByRole('status')).toHaveTextContent('try again in about 30 seconds');
 
@@ -167,7 +168,7 @@ describe('App', () => {
       'POST /api/v1/auth/refresh': () => tokens('short', 1), // expires at once: the next request refreshes
       'GET /api/v1/users/me': () => json(me),
     });
-    render(<App services={services} />);
+    render(<App services={services} modules={[coreModule]} />);
     await screen.findByText('ck@orudesk.org');
 
     fakeApi({ 'POST /api/v1/auth/refresh': () => json({ title: 'Invalid refresh token' }, 401) });

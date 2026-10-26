@@ -16,6 +16,11 @@ export interface Services {
   units: UnitStore;
   serviceStatus: ServiceStatus;
   api: OrudeskClient;
+  /**
+   * The fetch behind `api`, with the unit, the token and the outage check. A vertical builds its own typed
+   * client on it (its contract has paths the core's doesn't), and gets the same behaviour for free.
+   */
+  fetch: (request: Request) => Promise<Response>;
   queryClient: QueryClient;
 }
 
@@ -27,9 +32,8 @@ export function createServices(): Services {
   const units = new UnitStore();
   // Each request passes through: add X-Org-Unit, then add the token (and retry once on 401), then note
   // whether the API answered, then fetch.
-  const api = createOrudeskClient({
-    fetch: withOrgUnit(units, authFetch(session, plainFetch)),
-  });
+  const fetch = withOrgUnit(units, authFetch(session, plainFetch));
+  const api = createOrudeskClient({ fetch });
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
   });
@@ -37,5 +41,5 @@ export function createServices(): Services {
   session.subscribe(() => {
     if (session.getStatus() === 'signedOut') queryClient.clear();
   });
-  return { session, units, serviceStatus, api, queryClient };
+  return { session, units, serviceStatus, api, fetch, queryClient };
 }
