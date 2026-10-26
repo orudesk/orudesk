@@ -43,7 +43,7 @@ class MetricsSecurityConfig {
     SecurityFilterChain metricsFilterChain(HttpSecurity http) throws Exception {
         http
                 .securityMatcher(PATH)
-                .csrf(csrf -> csrf.disable())
+                // CSRF protection stays on: a scrape is a GET, which it never blocks
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .anyRequest().access((authentication, context) ->
