@@ -17,6 +17,9 @@ dependencies {
     // Only the annotations (@Operation, @Tag) that describe endpoints in the OpenAPI contract. Same version
     // as springdoc in the app uses; springdoc itself stays in the app.
     api 'io.swagger.core.v3:swagger-annotations-jakarta:2.2.38'
+    // RecordNullabilityModelConverter plugs into springdoc's schema generation. compileOnly: it's used only
+    // when an app has springdoc (which brings swagger-core), and the converter's configuration checks that.
+    compileOnly 'io.swagger.core.v3:swagger-core-jakarta:2.2.38'
 
     def springBoot = platform(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
     testFixturesImplementation springBoot

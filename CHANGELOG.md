@@ -6,6 +6,17 @@ Every release of the Orudesk core, newest first. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `web/`: the web app's workspace (React, TypeScript, Vite), and `@orudesk/api-client`, a typed client
+  generated from the OpenAPI contract.
+
+### Changed
+
+- The OpenAPI contract says which fields are always present: record components are required unless they
+  are `@Nullable` (JSpecify), and nullable ones have type `[..., "null"]`. The contract is sorted and
+  indented, so it diffs cleanly.
+
 ## [1.0.0] - 2026-10-26
 
 Backend release 1. From this version on, the public API (the HTTP endpoints, and the published modules'

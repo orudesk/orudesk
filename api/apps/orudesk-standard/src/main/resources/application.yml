@@ -66,3 +66,10 @@ management:
   health:
     redis:
       enabled: false                # Redis down means 503 on login, not "restart me" or "send no traffic" (Day 12)
+
+# The OpenAPI contract at /v3/api-docs. Sorted and indented, so the copy in web/packages/api-client is the
+# same file on every machine and a contract change shows up as a readable diff in the pull request.
+springdoc:
+  writer-with-order-by-keys: true
+  writer-with-default-pretty-printer: true
+  default-produces-media-type: application/json   # what every endpoint answers with; otherwise "*/*"

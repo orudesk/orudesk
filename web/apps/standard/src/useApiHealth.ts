@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { api } from './api';
 
 export type ApiHealth = 'checking' | 'up' | 'down';
 
@@ -8,8 +9,9 @@ export function useApiHealth(): ApiHealth {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch('/api/health', { signal: controller.signal })
-      .then((response) => setHealth(response.ok ? 'up' : 'down'))
+    api
+      .GET('/api/health', { signal: controller.signal })
+      .then(({ response }) => setHealth(response.ok ? 'up' : 'down'))
       .catch((error: unknown) => {
         // Unmounting aborts the request; that's not the API being down.
         if (!(error instanceof DOMException && error.name === 'AbortError')) setHealth('down');

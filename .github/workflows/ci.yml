@@ -21,6 +21,13 @@ jobs:
           java-version: '25'
       - uses: gradle/actions/setup-gradle@v4
       - run: ./gradlew test
+      # The web app's client is generated from a copy of the contract. If the API changed and the copy didn't,
+      # the web app would compile against an API that no longer exists: fail, and say how to fix it.
+      - name: The web client's copy of the OpenAPI contract is up to date
+        run: |
+          diff -u ../web/packages/api-client/openapi/orudesk-standard.json \
+            apps/orudesk-standard/build/openapi/orudesk-standard.json \
+            || { echo "::error::The API contract changed. Run 'pnpm contract:sync' in web/packages/api-client and commit."; exit 1; }
       # The API contract the web app's client is generated from, saved by OpenApiContractTest
       - uses: actions/upload-artifact@v4
         if: always()
@@ -45,6 +52,11 @@ jobs:
           cache: pnpm
           cache-dependency-path: web/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile   # like npm ci: fail if the lockfile doesn't match package.json
+      - name: The generated client matches the contract
+        run: |
+          pnpm --filter @orudesk/api-client generate
+          git diff --exit-code -- packages/api-client/src/generated \
+            || { echo "::error::Run 'pnpm generate' in web/packages/api-client and commit."; exit 1; }
       - run: pnpm check
       - run: pnpm build
 

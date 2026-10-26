@@ -1,0 +1,25 @@
+{
+  "name": "@orudesk/api-client",
+  "private": true,
+  "description": "A typed client for the Orudesk API, generated from its OpenAPI contract.",
+  "license": "AGPL-3.0-only",
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "contract:sync": "cp ../../../api/apps/orudesk-standard/build/openapi/orudesk-standard.json openapi/orudesk-standard.json && pnpm generate",
+    "generate": "openapi-typescript openapi/orudesk-standard.json --output src/generated/schema.ts && prettier --write src/generated",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "openapi-fetch": "^0.17.0"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.13.0",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.5"
+  }
+}
