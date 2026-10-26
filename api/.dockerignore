@@ -1,0 +1,6 @@
+# Keep the build context small and secret-free: no build output, no local .env.
+**/build
+**/.gradle
+.env
+*.iml
+.idea

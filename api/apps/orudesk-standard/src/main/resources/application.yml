@@ -47,3 +47,22 @@ orudesk:
       secret: ${ORUDESK_JWT_SECRET}
       access-token-ttl: 15m
       refresh-token-ttl: 14d
+
+# Actuator: what an orchestrator (Docker, Kubernetes) asks to decide if the app is alive and ready.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info       # nothing else over HTTP: env, beans and heapdump leak secrets
+  endpoint:
+    health:
+      probes:
+        enabled: true               # /actuator/health/liveness and /actuator/health/readiness
+      show-details: never           # anonymous callers see UP or DOWN, not database hostnames
+      group:
+        readiness:
+          include: readinessState, db   # no database, no traffic. Liveness never checks the DB: a DB outage
+                                        # must not make the orchestrator restart every app instance at once.
+  health:
+    redis:
+      enabled: false                # Redis down means 503 on login, not "restart me" or "send no traffic" (Day 12)

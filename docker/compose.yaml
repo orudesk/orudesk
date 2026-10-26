@@ -1,6 +1,11 @@
 # The services Orudesk needs locally: PostgreSQL and Redis, each with a volume so data survives restarts.
 # From the repo root:  docker compose --env-file api/.env -f docker/compose.yaml up -d
 # --env-file reads DB_PASSWORD from your api/.env, so the password lives in one place.
+#
+# The whole product, the API too (what a self-hoster runs):
+#   docker compose --env-file api/.env -f docker/compose.yaml --profile app up -d --build
+# A service with a profile only starts when you ask for that profile, so day-to-day development
+# (API in your IDE, database in Docker) is unchanged.
 name: orudesk
 
 services:
@@ -32,6 +37,32 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  app:
+    profiles: [app]
+    build:
+      context: ../api
+      args:
+        APP: orudesk-standard
+    image: ghcr.io/orudesk/orudesk-standard:${ORUDESK_VERSION:-latest}
+    environment:
+      # Inside Compose's network the services find each other by name, on their own ports.
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      ORUDESK_JWT_SECRET: ${ORUDESK_JWT_SECRET:?set ORUDESK_JWT_SECRET in api/.env}
+      ORUDESK_ADMIN_EMAIL: ${ORUDESK_ADMIN_EMAIL:-}
+      ORUDESK_ADMIN_PASSWORD: ${ORUDESK_ADMIN_PASSWORD:-}
+    ports:
+      - "8081:8080"   # 8081 on your machine, so a bootRun on 8080 can run at the same time
+    depends_on:
+      postgres:
+        condition: service_healthy   # wait for pg_isready, not just "container started"
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   postgres-data:

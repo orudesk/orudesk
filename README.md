@@ -3,7 +3,7 @@
 **An open source ERP for organisations that serve people**: schools, hospitals and clinics, NGOs.
 One core (login, roles, organisation units, a people registry) and an edition per sector built on it.
 
-> Status: early. The backend API comes first; the web app follows. Expect breaking changes before 1.0.
+> Status: backend release 1 (1.0.0). The web app is being built in `web/`.
 
 ## Editions
 
@@ -14,7 +14,24 @@ One core (login, roles, organisation units, a people registry) and an edition pe
 | orudesk/orudesk-school | Schools | Student admission |
 | orudesk/orudesk-hms | Hospitals and clinics | Patient registration |
 
-## Quick start
+## Quick start: run it
+
+You need only **Docker** (Docker Desktop, Colima or Podman) and this repository.
+
+```bash
+git clone https://github.com/orudesk/orudesk.git
+cd orudesk
+cp api/.env.example api/.env        # then set DB_PASSWORD, ORUDESK_JWT_SECRET and the first admin
+docker compose --env-file api/.env -f docker/compose.yaml --profile app up -d --build --wait
+```
+
+The first build takes a few minutes (it compiles the API inside Docker). Then the API is on
+<http://localhost:8081>; `--wait` returns once `/actuator/health/readiness` says UP. Instead of building,
+you can run a released image: set `ORUDESK_VERSION=1.0.0` in `api/.env` and leave out `--build`.
+
+Stop it with `docker compose -f docker/compose.yaml --profile app down` (add `-v` to delete the data too).
+
+## Quick start: develop it
 
 You need **JDK 25** and **Docker** (Docker Desktop, Colima or Podman). Nothing else: PostgreSQL and Redis
 run in containers.
@@ -37,6 +54,15 @@ curl -s -X POST localhost:8080/api/v1/auth/login -H 'Content-Type: application/j
 
 Interactive API docs: <http://localhost:8080/swagger-ui.html>. The OpenAPI contract: `/v3/api-docs`.
 
+## Running it in production
+
+- The image runs as a non-root user and sizes its heap from the container's memory limit.
+- `/actuator/health/liveness` (is the process alive?) and `/actuator/health/readiness` (may it get traffic?
+  this one checks the database) need no token and say only UP or DOWN. Point your orchestrator at them.
+- Back up the PostgreSQL volume. Redis holds only refresh tokens and caches: losing it logs everyone out,
+  nothing more.
+- Put TLS in front (a reverse proxy such as Caddy or nginx); the app speaks plain HTTP.
+
 ## Run the tests
 
 ```bash
@@ -51,7 +77,7 @@ modules you need, without versions:
 
 ```groovy
 dependencies {
-    implementation platform('com.orudesk:orudesk-bom:0.1.0')
+    implementation platform('com.orudesk:orudesk-bom:1.0.0')
     implementation 'com.orudesk:orudesk-platform-core'
     implementation 'com.orudesk:orudesk-identity'
     implementation 'com.orudesk:orudesk-party'

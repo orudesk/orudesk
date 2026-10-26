@@ -4,10 +4,16 @@ Every release of the Orudesk core, newest first. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html): before 1.0.0, a minor release may break things.
 
-## [Unreleased]
+## [1.0.0] - 2026-10-26
+
+Backend release 1. From this version on, the public API (the HTTP endpoints, and the published modules'
+public Java packages) changes incompatibly only in a new major version.
 
 ### Added
 
+- **Docker image** for the standard edition (`ghcr.io/orudesk/orudesk-standard`), built from source by
+  `api/Dockerfile`, running as a non-root user. `docker compose --profile app` runs the whole product.
+- **Health probes**: `/actuator/health/liveness` and `/actuator/health/readiness` for Docker and Kubernetes.
 - `RoleDefinition`: a module or vertical declares the roles it needs as beans, and identity adds them at
   startup.
 
