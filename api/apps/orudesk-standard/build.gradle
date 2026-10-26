@@ -23,6 +23,10 @@ dependencies {
     testImplementation 'org.springframework.modulith:spring-modulith-docs'
 }
 
+springBoot {
+    buildInfo()   // writes META-INF/build-info.properties (name, version, time): the API reports its own version
+}
+
 tasks.named('bootRun') {
     args = ['--spring.profiles.active=local']
 }

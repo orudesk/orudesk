@@ -1,0 +1,14 @@
+# Dependabot opens a pull request when a dependency has a new version. CI then tells us if it's safe.
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /api
+    schedule:
+      interval: weekly
+    groups:
+      spring:                        # one pull request for all Spring updates, not twenty
+        patterns: ["org.springframework*"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

@@ -8,6 +8,11 @@ import com.orudesk.orudesk.identity.application.port.in.OrgAccessQuery;
 import com.orudesk.orudesk.identity.application.port.in.OrgUnitNode;
 import com.orudesk.orudesk.identity.application.port.in.UnitAccess;
 import com.orudesk.orudesk.identity.domain.OrgUnitId;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,6 +27,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/org-units")
+@Tag(name = "Org units")
 class OrgUnitController {
 
     private final CreateOrgUnitUseCase createOrgUnit;
@@ -39,6 +45,7 @@ class OrgUnitController {
 
     /** An ADMIN of the parent unit (or of anything above it, or tenant-wide) may add a unit below it. */
     @PostMapping
+    @Operation(operationId = "createOrgUnit", summary = "Add a school, branch or group below an existing unit")
     @PreAuthorize("@orgAccess.currentUserHasRoleAt('ADMIN', #request.parentId())")
     ResponseEntity<CreateOrgUnitResponse> create(@Valid @RequestBody CreateOrgUnitRequest request) {
         UUID id = createOrgUnit.create(new CreateOrgUnitCommand(
@@ -50,12 +57,16 @@ class OrgUnitController {
 
     /** Any logged-in user may see how their organisation is structured; the web app's unit switcher needs it. */
     @GetMapping
+    @Operation(operationId = "getOrgTree", summary = "The tenant's org units, as a tree")
     OrgUnitNode tree() {
         return getOrgTree.getTree();
     }
 
     /** The unit in the X-Org-Unit header, and the caller's roles there. */
     @GetMapping("/current")
+    @Operation(operationId = "getCurrentOrgUnit", summary = "The unit in the X-Org-Unit header, and your roles there")
+    @Parameter(in = ParameterIn.HEADER, name = CurrentOrgUnit.HEADER, required = true,
+            description = "The id of the org unit this request is for", schema = @Schema(type = "string", format = "uuid"))
     UnitAccess current() {
         return orgAccess.accessAt(OrgUnitAccessAdapter.currentUser(), new OrgUnitId(currentOrgUnit.require()));
     }
