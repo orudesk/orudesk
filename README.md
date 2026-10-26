@@ -3,7 +3,7 @@
 **An open source ERP for organisations that serve people**: schools, hospitals and clinics, NGOs.
 One core (login, roles, organisation units, a people registry) and an edition per sector built on it.
 
-> Status: backend release 1 (1.0.0). The web app is being built in `web/`.
+> Status: 1.1.0, the MVP: the API and the web app. Try it with the demo below.
 
 ## Editions
 
@@ -42,7 +42,7 @@ docker compose --env-file api/.env -f docker/compose.yaml --profile app up -d --
 
 The first build takes a few minutes (it compiles the API and the web app inside Docker). Then Orudesk is on
 <http://localhost:8090> (the API alone on <http://localhost:8081>); `--wait` returns once both are healthy. Instead of building,
-you can run a released image: set `ORUDESK_VERSION=1.0.0` in `api/.env` and leave out `--build`.
+you can run a released image: set `ORUDESK_VERSION=1.1.0` in `api/.env` and leave out `--build`.
 
 Stop it with `docker compose -f docker/compose.yaml --profile app down` (add `-v` to delete the data too).
 
@@ -108,7 +108,7 @@ modules you need, without versions:
 
 ```groovy
 dependencies {
-    implementation platform('com.orudesk:orudesk-bom:1.0.0')
+    implementation platform('com.orudesk:orudesk-bom:1.1.0')
     implementation 'com.orudesk:orudesk-platform-core'
     implementation 'com.orudesk:orudesk-identity'
     implementation 'com.orudesk:orudesk-party'

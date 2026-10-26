@@ -6,6 +6,11 @@ Every release of the Orudesk core, newest first. The format follows
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-26
+
+The MVP: the web app. An admin signs in, picks the unit they work in, manages users' roles and the people
+registry, from a browser, and `docker/demo.env` runs it all with sample data in one command.
+
 ### Added
 
 - `web/`: the web app's workspace (React, TypeScript, Vite), and `@orudesk/api-client`, a typed client
@@ -82,5 +87,7 @@ The first release: the shared core that the Orudesk verticals (NGO, school, hosp
 - **API contract**: OpenAPI at `/v3/api-docs` with stable operation names, for generated clients.
 - `orudesk-bom`, so a vertical writes one version number for all core modules.
 
-[Unreleased]: https://github.com/orudesk/orudesk/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/orudesk/orudesk/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/orudesk/orudesk/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/orudesk/orudesk/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/orudesk/orudesk/releases/tag/v0.1.0
