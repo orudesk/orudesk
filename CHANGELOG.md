@@ -10,12 +10,18 @@ Every release of the Orudesk core, newest first. The format follows
 
 - `web/`: the web app's workspace (React, TypeScript, Vite), and `@orudesk/api-client`, a typed client
   generated from the OpenAPI contract.
+- Refresh token as a cookie: a client that sends `X-Refresh-Token-Transport: cookie` gets the refresh token
+  as an HttpOnly, Secure, SameSite=Strict cookie (path `/api/v1/auth`) instead of in the JSON body, and
+  `/refresh` and `/logout` read it from there. Clients that don't send the header work as before.
+- CORS, off by default: `ORUDESK_WEB_ALLOWED_ORIGINS` lists other origins whose pages may call the API.
 
 ### Changed
 
 - The OpenAPI contract says which fields are always present: record components are required unless they
   are `@Nullable` (JSpecify), and nullable ones have type `[..., "null"]`. The contract is sorted and
   indented, so it diffs cleanly.
+- `TokenResponse.refreshToken` is optional in the contract (absent for cookie clients), and the bodies of
+  `/refresh` and `/logout` are optional (cookie clients send none).
 
 ## [1.0.0] - 2026-10-26
 

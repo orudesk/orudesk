@@ -47,6 +47,16 @@
     "/api/v1/auth/login" : {
       "post" : {
         "operationId" : "login",
+        "parameters" : [ {
+          "description" : "Send 'cookie' to get and send the refresh token as an HttpOnly cookie instead of in JSON",
+          "in" : "header",
+          "name" : "X-Refresh-Token-Transport",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "cookie" ]
+          }
+        } ],
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -77,6 +87,16 @@
     "/api/v1/auth/logout" : {
       "post" : {
         "operationId" : "logout",
+        "parameters" : [ {
+          "description" : "Send 'cookie' to get and send the refresh token as an HttpOnly cookie instead of in JSON",
+          "in" : "header",
+          "name" : "X-Refresh-Token-Transport",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "cookie" ]
+          }
+        } ],
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -84,12 +104,11 @@
                 "$ref" : "#/components/schemas/RefreshTokenRequest"
               }
             }
-          },
-          "required" : true
+          }
         },
         "responses" : {
           "204" : {
-            "description" : "No Content"
+            "description" : "Logged out"
           }
         },
         "security" : [ ],
@@ -100,6 +119,16 @@
     "/api/v1/auth/refresh" : {
       "post" : {
         "operationId" : "refreshTokens",
+        "parameters" : [ {
+          "description" : "Send 'cookie' to get and send the refresh token as an HttpOnly cookie instead of in JSON",
+          "in" : "header",
+          "name" : "X-Refresh-Token-Transport",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "cookie" ]
+          }
+        } ],
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -107,8 +136,7 @@
                 "$ref" : "#/components/schemas/RefreshTokenRequest"
               }
             }
-          },
-          "required" : true
+          }
         },
         "responses" : {
           "200" : {
@@ -615,13 +643,13 @@
             "format" : "int64"
           },
           "refreshToken" : {
-            "type" : "string"
+            "type" : [ "string", "null" ]
           },
           "tokenType" : {
             "type" : "string"
           }
         },
-        "required" : [ "accessToken", "expiresIn", "refreshToken", "tokenType" ]
+        "required" : [ "accessToken", "expiresIn", "tokenType" ]
       },
       "UnitAccess" : {
         "type" : "object",

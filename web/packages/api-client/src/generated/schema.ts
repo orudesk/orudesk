@@ -274,7 +274,7 @@ export interface components {
       accessToken: string;
       /** Format: int64 */
       expiresIn: number;
-      refreshToken: string;
+      refreshToken?: string | null;
       tokenType: string;
     };
     UnitAccess: {
@@ -329,7 +329,10 @@ export interface operations {
   login: {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Send 'cookie' to get and send the refresh token as an HttpOnly cookie instead of in JSON */
+        'X-Refresh-Token-Transport'?: 'cookie';
+      };
       path?: never;
       cookie?: never;
     };
@@ -353,17 +356,20 @@ export interface operations {
   logout: {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Send 'cookie' to get and send the refresh token as an HttpOnly cookie instead of in JSON */
+        'X-Refresh-Token-Transport'?: 'cookie';
+      };
       path?: never;
       cookie?: never;
     };
-    requestBody: {
+    requestBody?: {
       content: {
         'application/json': components['schemas']['RefreshTokenRequest'];
       };
     };
     responses: {
-      /** @description No Content */
+      /** @description Logged out */
       204: {
         headers: {
           [name: string]: unknown;
@@ -375,11 +381,14 @@ export interface operations {
   refreshTokens: {
     parameters: {
       query?: never;
-      header?: never;
+      header?: {
+        /** @description Send 'cookie' to get and send the refresh token as an HttpOnly cookie instead of in JSON */
+        'X-Refresh-Token-Transport'?: 'cookie';
+      };
       path?: never;
       cookie?: never;
     };
-    requestBody: {
+    requestBody?: {
       content: {
         'application/json': components['schemas']['RefreshTokenRequest'];
       };
