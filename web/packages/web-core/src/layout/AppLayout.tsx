@@ -1,6 +1,8 @@
 import { Anchor, AppShell, Burger, Group, NavLink, Text } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
+import type { Schemas } from '@orudesk/api-client';
 import { Link, Outlet, useLocation } from 'react-router';
+import type { NavItem } from '../module';
 import { ColorSchemeToggle } from './ColorSchemeToggle';
 import { useMe } from '../queries/me';
 import { ServiceBanner } from '../status/ServiceBanner';
@@ -17,9 +19,7 @@ export function AppLayout() {
   const { pathname } = useLocation();
   const me = useMe();
   const navigation = useNavigation();
-  const items = navigation.filter(
-    (item) => !item.roles || item.roles.some((role) => me.data?.roles.includes(role)),
-  );
+  const items = navigation.filter((item) => mayShow(item, me.data));
 
   return (
     <AppShell
@@ -75,4 +75,13 @@ export function AppLayout() {
       </AppShell.Main>
     </AppShell>
   );
+}
+
+/** Entries with no roles are for everyone; otherwise a tenant-wide role from `roles`, or any grant of `rolesAnywhere`. */
+function mayShow(item: NavItem, me: Schemas['UserProfile'] | undefined): boolean {
+  if (!item.roles && !item.rolesAnywhere) return true;
+  const tenantWide = item.roles?.some((role) => me?.roles.includes(role)) ?? false;
+  const anywhere =
+    item.rolesAnywhere?.some((role) => me?.grants.some((g) => g.role === role)) ?? false;
+  return tenantWide || anywhere;
 }

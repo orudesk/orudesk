@@ -19,4 +19,5 @@ export { useMe } from './queries/me';
 export { problemMessage } from './queries/problem';
 export { usePageTitle } from './layout/usePageTitle';
 export { useCurrentUnit } from './units/useCurrentUnit';
+export { useCurrentUnitAccess } from './queries/orgUnits';
 export { formatDate } from './pages/formatDate';

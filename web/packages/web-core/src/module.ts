@@ -5,8 +5,16 @@ export interface NavItem {
   label: string;
   path: string;
   icon: ReactNode;
-  /** Shown only to users with one of these roles. Hiding is a courtesy: the API refuses them anyway. */
+  /**
+   * Shown only to users with one of these roles tenant-wide. Hiding is a courtesy: the API refuses them anyway.
+   * A principal who is ADMIN at one school doesn't see the tenant's Users screen.
+   */
   roles?: string[];
+  /**
+   * Shown to users with one of these roles anywhere: tenant-wide or at any unit. For screens that work per unit,
+   * like a school's admissions, where an officer is given the role at their school only.
+   */
+  rolesAnywhere?: string[];
 }
 
 /**

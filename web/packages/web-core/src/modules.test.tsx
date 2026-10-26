@@ -48,4 +48,34 @@ describe('a module plugged into the app', () => {
     expect(donors.headers.get('X-Org-Unit')).toBe('north');
     localStorage.clear();
   });
+
+  it('shows an entry for a role given at a unit only when the module asks for that', async () => {
+    window.history.pushState({}, '', '/');
+    const school: OrudeskModule = {
+      id: 'school',
+      routes: [],
+      navigation: [
+        { label: 'Students', path: '/students', icon: null, rolesAnywhere: ['ADMISSIONS_OFFICER'] },
+        { label: 'Fees', path: '/fees', icon: null, roles: ['ADMISSIONS_OFFICER'] },
+      ],
+    };
+    fakeApi({
+      'POST /api/v1/auth/refresh': () => tokens(),
+      'GET /api/v1/users/me': () =>
+        json({
+          id: 'u1',
+          tenantId: 't1',
+          email: 'officer@sunrise.edu',
+          roles: ['USER'], // tenant-wide only
+          grants: [{ role: 'USER' }, { role: 'ADMISSIONS_OFFICER', orgUnitId: 'north' }],
+          enabled: true,
+        }),
+      'GET /api/v1/org-units': () =>
+        json({ id: 'north', name: 'North School', code: 'N', type: 'SCHOOL', children: [] }),
+    });
+    render(<App services={createServices()} modules={[coreModule, school]} />);
+
+    expect(await screen.findByRole('link', { name: 'Students' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Fees' })).not.toBeInTheDocument();
+  });
 });

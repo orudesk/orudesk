@@ -26,6 +26,9 @@ Every release of the Orudesk core, newest first. The format follows
 - API responses under `/api` carry `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'` and
   `Referrer-Policy: no-referrer`. Caddy adds `Strict-Transport-Security` (browsers apply it on HTTPS only) and
   `Cross-Origin-Opener-Policy`, and no longer replaces the API's own headers.
+- web-core, for modules: a menu entry can ask for `rolesAnywhere` (a role tenant-wide or at any unit, like an
+  admissions officer at one school), and `useCurrentUnitAccess` says what the current unit is and the user's
+  roles there.
 - CI: CodeQL (Java, TypeScript and the workflows) on every pull request and weekly, and a dependency review that
   fails a pull request adding a dependency with a known high or critical vulnerability. Dependabot also watches
   the Docker base images.
