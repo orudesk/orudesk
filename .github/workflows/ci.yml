@@ -71,5 +71,44 @@ jobs:
         with:
           context: api
           push: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+      - uses: docker/build-push-action@v6
+        with:
+          context: web
+          push: false
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+
+  # The whole product as a user gets it (the demo: Caddy, the API, PostgreSQL, Redis, built from this commit),
+  # driven by a real browser, at desktop and phone sizes. Slower than the rest, so it runs once they pass.
+  e2e:
+    needs: [test, web]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start the demo
+        run: docker compose --env-file docker/demo.env -f docker/compose.yaml --profile app up -d --build --wait
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: web/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: web/.nvmrc
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: web
+      - run: pnpm --filter @orudesk/e2e exec playwright install --with-deps chromium
+        working-directory: web
+      - run: pnpm --filter @orudesk/e2e e2e
+        working-directory: web
+      - name: The API's log, when something failed
+        if: failure()
+        run: docker compose -f docker/compose.yaml --profile app logs app
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: web/e2e/playwright-report/
+

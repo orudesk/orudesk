@@ -6,6 +6,11 @@ Every release of the Orudesk core, newest first. The format follows
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-26
+
+The MVP: the web app. An admin signs in, picks the unit they work in, manages users' roles and the people
+registry, from a browser, and `docker/demo.env` runs it all with sample data in one command.
+
 ### Added
 
 - `web/`: the web app's workspace (React, TypeScript, Vite), and `@orudesk/api-client`, a typed client
@@ -21,10 +26,26 @@ Every release of the Orudesk core, newest first. The format follows
   rule as assigning about who may do it. 409 if the user would be left without a role, or if an admin tries to
   remove their own tenant-wide ADMIN role.
 - Web app: sign-in, the app shell, the org unit switcher, a Users screen for admins where they give and
-  take away roles, and People screens (search, add with the server's field errors, one person's page).
+  take away roles, and People screens (search, add with the server's field errors, one person's page), a banner while the API is down, error pages
+  that keep the menu, and a notice when the session has ended.
+- A web image (`ghcr.io/orudesk/orudesk-standard-web`): the web app served by Caddy, which also passes `/api`
+  to the API, sets security headers (CSP, no framing) and caching, and gets an HTTPS certificate when
+  `ORUDESK_SITE` is a domain. Compose runs it on port 8090 with the `app` profile.
+- A one-command demo with sample data: `docker/demo.env` and the `demo` Spring profile (two schools, a clinic,
+  users with scoped roles, twelve people), loaded through the use cases by each module.
+- `SystemActor.runAs(tenant, work)`: work no user started runs inside one tenant, through the same checks as
+  a request.
+- End-to-end smoke tests (`web/e2e`, Playwright) against the demo stack, at desktop and phone sizes, in CI.
+- `web/packages/web-core`: the web app's shell and core screens as a package, and a module contract
+  (`OrudeskModule`: routes and menu entries) through which editions add their own screens.
 
 ### Changed
 
+- The unit switcher starts a user without a remembered unit in the first unit they have a role in (a school
+  principal in their school), not at the top of the tree.
+- A database that goes away mid-request, or a pool that can't get a connection, now answers 503 with
+  `Retry-After` (it was a 500 without a problem body). The standard app waits at most 5 s for a database
+  connection (`spring.datasource.hikari.connection-timeout`), not 30 s.
 - The contract says 201 Created (not 200) for `POST /api/v1/auth/register`, `/api/v1/org-units` and
   `/api/v1/people`, as the API has always answered.
 - Assigning a role to a disabled user answers 409 "Role change not allowed" instead of 500.
@@ -66,5 +87,7 @@ The first release: the shared core that the Orudesk verticals (NGO, school, hosp
 - **API contract**: OpenAPI at `/v3/api-docs` with stable operation names, for generated clients.
 - `orudesk-bom`, so a vertical writes one version number for all core modules.
 
-[Unreleased]: https://github.com/orudesk/orudesk/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/orudesk/orudesk/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/orudesk/orudesk/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/orudesk/orudesk/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/orudesk/orudesk/releases/tag/v0.1.0

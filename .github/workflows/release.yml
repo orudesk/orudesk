@@ -81,5 +81,16 @@ jobs:
           tags: |
             ghcr.io/orudesk/orudesk-standard:${{ steps.v.outputs.version }}
             ghcr.io/orudesk/orudesk-standard:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+      # The web app's image, with the same version: a release is the API and its web app together
+      - uses: docker/build-push-action@v6
+        with:
+          context: web
+          build-args: APP=standard
+          push: true
+          tags: |
+            ghcr.io/orudesk/orudesk-standard-web:${{ steps.v.outputs.version }}
+            ghcr.io/orudesk/orudesk-standard-web:latest
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web

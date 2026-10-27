@@ -9,13 +9,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.TransactionException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -77,13 +77,14 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
-     * A connection that broke mid-command ("Connection reset") arrives as an uncategorized error, because
-     * the client can't tell why the socket died. Only a network failure underneath makes it a 503; any other
-     * uncategorized error is a real bug and stays a 500.
+     * A connection that broke mid-command arrives as an uncategorized error ("Connection reset", or Hibernate's
+     * "Unable to rollback" when the database went away inside a transaction), and a pool that can't get a
+     * connection fails before the transaction starts. Only a lost connection underneath makes these a 503; any
+     * other such error is a real bug and stays a 500.
      */
-    @ExceptionHandler(UncategorizedDataAccessException.class)
-    ResponseEntity<ProblemDetail> brokenConnection(UncategorizedDataAccessException e) {
-        if (e.getRootCause() instanceof IOException) {
+    @ExceptionHandler({UncategorizedDataAccessException.class, TransactionException.class})
+    ResponseEntity<ProblemDetail> brokenConnection(RuntimeException e) {
+        if (ConnectionFailures.isConnectionFailure(e)) {
             return unavailable(e);
         }
         throw e;

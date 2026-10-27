@@ -1,4 +1,6 @@
-# Every folder under apps/ and packages/ is a package of this workspace (like npm/yarn workspaces).
+# Every folder under apps/ and packages/ is a package of this workspace (like npm/yarn workspaces),
+# and so is e2e/, the end-to-end tests.
 packages:
   - apps/*
   - packages/*
+  - e2e

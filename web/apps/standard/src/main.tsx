@@ -1,13 +1,4 @@
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
-import { App } from './App';
-import { createServices } from './services';
+import { startOrudeskApp } from '@orudesk/web-core';
+import { modules } from './modules';
 
-const root = document.getElementById('root');
-if (!root) throw new Error('index.html has no #root element');
-
-createRoot(root).render(
-  <StrictMode>
-    <App services={createServices()} />
-  </StrictMode>,
-);
+startOrudeskApp(modules);
