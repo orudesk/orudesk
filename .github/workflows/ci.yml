@@ -33,7 +33,7 @@ jobs:
             apps/orudesk-standard/build/openapi/orudesk-standard.json \
             || { echo "::error::The API contract changed. Run 'pnpm contract:sync' in web/packages/api-client and commit."; exit 1; }
       # The API contract the web app's client is generated from, saved by OpenApiContractTest
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: openapi
@@ -110,7 +110,7 @@ jobs:
       - name: The API's log, when something failed
         if: failure()
         run: docker compose -f docker/compose.yaml --profile app logs app
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report
