@@ -1,8 +1,20 @@
+import {
+  Alert,
+  Button,
+  Center,
+  Paper,
+  PasswordInput,
+  Stack,
+  TextInput,
+  Title,
+} from '@mantine/core';
+import { IconAlertCircle } from '@tabler/icons-react';
 import { useState, type FormEvent } from 'react';
 import { Navigate, useSearchParams } from 'react-router';
 import type { LoginResult } from '../auth/session';
 import { safeRedirect } from '../auth/safeRedirect';
 import { useAuth } from '../auth/useAuth';
+import { usePageTitle } from '../layout/usePageTitle';
 
 const failures: Record<Exclude<LoginResult, { ok: true }>['reason'], string> = {
   credentials: 'Wrong email or password.',
@@ -12,6 +24,7 @@ const failures: Record<Exclude<LoginResult, { ok: true }>['reason'], string> = {
 };
 
 export function LoginPage() {
+  usePageTitle('Log in');
   const { status, login } = useAuth();
   const [searchParams] = useSearchParams();
   const [error, setError] = useState<string | null>(null);
@@ -33,22 +46,38 @@ export function LoginPage() {
   }
 
   return (
-    <main>
-      <h1>Log in to Orudesk</h1>
-      <form onSubmit={onSubmit} noValidate={false}>
-        <label>
-          Email
-          <input name="email" type="email" autoComplete="username" required />
-        </label>
-        <label>
-          Password
-          <input name="password" type="password" autoComplete="current-password" required />
-        </label>
-        {error && <p role="alert">{error}</p>}
-        <button type="submit" disabled={submitting}>
-          {submitting ? 'Logging in...' : 'Log in'}
-        </button>
-      </form>
-    </main>
+    <Center component="main" mih="100vh" p="md">
+      <Paper withBorder shadow="sm" p="xl" w="100%" maw={400}>
+        <form onSubmit={onSubmit}>
+          <Stack>
+            <Title order={1} size="h2">
+              Log in to Orudesk
+            </Title>
+            <TextInput
+              label="Email"
+              name="email"
+              type="email"
+              autoComplete="username"
+              required
+              autoFocus
+            />
+            <PasswordInput
+              label="Password"
+              name="password"
+              autoComplete="current-password"
+              required
+            />
+            {error && (
+              <Alert color="red" icon={<IconAlertCircle size={18} />} role="alert">
+                {error}
+              </Alert>
+            )}
+            <Button type="submit" loading={submitting} fullWidth>
+              Log in
+            </Button>
+          </Stack>
+        </form>
+      </Paper>
+    </Center>
   );
 }

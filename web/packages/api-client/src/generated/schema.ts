@@ -159,6 +159,40 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/roles': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Every role that can be granted */
+    get: operations['listRoles'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/users': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** The tenant's users with their roles, one page at a time */
+    get: operations['listUsers'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/users/me': {
     parameters: {
       query?: never;
@@ -188,6 +222,23 @@ export interface paths {
     /** Give a user a role, for the whole tenant or one org unit */
     post: operations['assignRole'];
     delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/users/{userId}/roles/{role}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Take a role away from a user, tenant-wide or in one org unit */
+    delete: operations['revokeRole'];
     options?: never;
     head?: never;
     patch?: never;
@@ -270,6 +321,11 @@ export interface components {
       /** Format: uuid */
       id: string;
     };
+    RoleDetails: {
+      code: string;
+      description?: string | null;
+      name: string;
+    };
     TokenResponse: {
       accessToken: string;
       /** Format: int64 */
@@ -285,6 +341,10 @@ export interface components {
       roles: string[];
       type: string;
     };
+    UserPage: {
+      items: components['schemas']['UserSummary'][];
+      nextCursor?: string | null;
+    };
     UserProfile: {
       email: string;
       enabled: boolean;
@@ -294,6 +354,13 @@ export interface components {
       roles: string[];
       /** Format: uuid */
       tenantId: string;
+    };
+    UserSummary: {
+      email: string;
+      enabled: boolean;
+      grants: components['schemas']['Grant'][];
+      /** Format: uuid */
+      id: string;
     };
   };
   responses: never;
@@ -418,8 +485,8 @@ export interface operations {
       };
     };
     responses: {
-      /** @description OK */
-      200: {
+      /** @description Created */
+      201: {
         headers: {
           [name: string]: unknown;
         };
@@ -462,8 +529,8 @@ export interface operations {
       };
     };
     responses: {
-      /** @description OK */
-      200: {
+      /** @description Created */
+      201: {
         headers: {
           [name: string]: unknown;
         };
@@ -533,8 +600,8 @@ export interface operations {
       };
     };
     responses: {
-      /** @description OK */
-      200: {
+      /** @description Created */
+      201: {
         headers: {
           [name: string]: unknown;
         };
@@ -562,6 +629,50 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['PersonDetails'];
+        };
+      };
+    };
+  };
+  listRoles: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['RoleDetails'][];
+        };
+      };
+    };
+  };
+  listUsers: {
+    parameters: {
+      query?: {
+        q?: string;
+        after?: string;
+        size?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['UserPage'];
         };
       };
     };
@@ -600,6 +711,29 @@ export interface operations {
         'application/json': components['schemas']['AssignRoleRequest'];
       };
     };
+    responses: {
+      /** @description No Content */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  revokeRole: {
+    parameters: {
+      query?: {
+        orgUnitId?: string;
+      };
+      header?: never;
+      path: {
+        userId: string;
+        role: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
     responses: {
       /** @description No Content */
       204: {

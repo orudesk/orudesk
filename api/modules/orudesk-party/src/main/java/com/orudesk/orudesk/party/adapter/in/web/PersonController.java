@@ -8,6 +8,7 @@ import com.orudesk.orudesk.party.application.port.in.RegisterPersonCommand;
 import com.orudesk.orudesk.party.application.port.in.RegisterPersonUseCase;
 import com.orudesk.orudesk.party.application.port.in.SearchPeopleQuery;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -41,6 +42,8 @@ class PersonController {
 
     @PostMapping
     @Operation(operationId = "registerPerson", summary = "Add a person to the registry")
+    // The method answers 201 Created with a Location header; without this the contract would claim 200
+    @ApiResponse(responseCode = "201", description = "Created", useReturnTypeSchema = true)
     ResponseEntity<RegisterPersonResponse> register(@Valid @RequestBody RegisterPersonRequest request) {
         UUID id = registerPerson.register(new RegisterPersonCommand(
                 request.firstName(), request.lastName(), request.dateOfBirth(), request.phone(), request.email()));

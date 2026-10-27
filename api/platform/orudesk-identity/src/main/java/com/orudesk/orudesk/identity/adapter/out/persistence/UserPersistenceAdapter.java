@@ -1,8 +1,11 @@
 package com.orudesk.orudesk.identity.adapter.out.persistence;
 
+import com.orudesk.orudesk.identity.application.port.in.RoleDetails;
 import com.orudesk.orudesk.identity.application.port.out.LoadRolePort;
+import com.orudesk.orudesk.identity.application.port.out.LoadRolesPort;
 import com.orudesk.orudesk.identity.application.port.out.LoadUserPort;
 import com.orudesk.orudesk.identity.application.port.out.SaveUserPort;
+import com.orudesk.orudesk.identity.application.port.out.SearchUsersPort;
 import com.orudesk.orudesk.identity.domain.Email;
 import com.orudesk.orudesk.identity.domain.OrgUnitId;
 import com.orudesk.orudesk.identity.domain.PasswordHash;
@@ -12,12 +15,17 @@ import com.orudesk.orudesk.identity.domain.TenantId;
 import com.orudesk.orudesk.identity.domain.UnknownRoleException;
 import com.orudesk.orudesk.identity.domain.User;
 import com.orudesk.orudesk.identity.domain.UserId;
+import org.jspecify.annotations.Nullable;
+import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -26,7 +34,7 @@ import java.util.stream.Collectors;
  * and the UserJpaEntity, so neither side knows about the other.
  */
 @Component
-class UserPersistenceAdapter implements LoadUserPort, SaveUserPort, LoadRolePort {
+class UserPersistenceAdapter implements LoadUserPort, SaveUserPort, LoadRolePort, SearchUsersPort, LoadRolesPort {
 
     private final UserJpaRepository users;
     private final RoleJpaRepository roles;
@@ -64,6 +72,33 @@ class UserPersistenceAdapter implements LoadUserPort, SaveUserPort, LoadRolePort
     @Transactional(readOnly = true)
     public Optional<User> findByEmail(Email email) {
         return users.findWithRolesByEmail(email.value()).map(this::toDomain);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<User> search(@Nullable String text, @Nullable String afterEmail, int limit) {
+        String pattern = text == null ? null : "%" + escapeLike(text) + "%";
+        List<UUID> ids = users.findPageIds(pattern, afterEmail, Limit.of(limit));
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        return users.findWithRolesByIdIn(ids).stream()
+                .sorted(Comparator.comparing(UserJpaEntity::getEmail))   // IN (...) returns rows in any order
+                .map(this::toDomain)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<RoleDetails> loadAll() {
+        return roles.findAllByOrderByCode().stream()
+                .map(role -> new RoleDetails(role.getCode(), role.getName(), role.getDescription()))
+                .toList();
+    }
+
+    /** A user typing "a_b" means the characters a, _ and b, not LIKE's "any one character" wildcard. */
+    private static String escapeLike(String text) {
+        return text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
     }
 
     private User toDomain(UserJpaEntity entity) {

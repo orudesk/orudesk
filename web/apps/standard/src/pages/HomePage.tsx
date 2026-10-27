@@ -1,32 +1,46 @@
-import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '../auth/useAuth';
-import { useApi } from '../ServicesContext';
+import { Badge, Card, Group, Loader, Stack, Text, Title } from '@mantine/core';
+import { usePageTitle } from '../layout/usePageTitle';
+import { useMe } from '../queries/me';
+import { useCurrentUnitAccess } from '../queries/orgUnits';
+import { useCurrentUnit } from '../units/useCurrentUnit';
 
 export function HomePage() {
-  const api = useApi();
-  const { logout } = useAuth();
-  const me = useQuery({
-    queryKey: ['users', 'me'],
-    queryFn: async () => {
-      const { data, error } = await api.GET('/api/v1/users/me');
-      if (error) throw new Error('Could not load your profile');
-      return data;
-    },
-  });
+  usePageTitle('Home');
+  const me = useMe();
+  const { unitId } = useCurrentUnit();
+  const here = useCurrentUnitAccess(unitId);
 
   return (
-    <main>
-      <h1>Orudesk</h1>
-      {me.isPending && <p role="status">Loading...</p>}
-      {me.isError && <p role="alert">{me.error.message}</p>}
+    <Stack>
+      <Title order={1}>Home</Title>
+      {me.isPending && <Loader size="sm" aria-label="Loading" />}
+      {me.isError && <Text role="alert">{me.error.message}</Text>}
       {me.data && (
-        <p>
-          Signed in as <strong>{me.data.email}</strong> ({me.data.roles.join(', ') || 'no roles'})
-        </p>
+        <Text>
+          Signed in as <strong>{me.data.email}</strong>
+        </Text>
       )}
-      <button type="button" onClick={() => void logout()}>
-        Log out
-      </button>
-    </main>
+      {here.data && (
+        <Card withBorder maw={480}>
+          <Text size="sm" c="dimmed">
+            Working in
+          </Text>
+          <Text fw={600} size="lg">
+            {here.data.name}
+          </Text>
+          <Group gap="xs" mt="sm" aria-label="Your roles here">
+            {here.data.roles.length === 0 ? (
+              <Text size="sm">You have no roles here.</Text>
+            ) : (
+              here.data.roles.map((role) => (
+                <Badge key={role} variant="light">
+                  {role}
+                </Badge>
+              ))
+            )}
+          </Group>
+        </Card>
+      )}
+    </Stack>
   );
 }

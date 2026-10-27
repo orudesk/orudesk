@@ -72,6 +72,7 @@ class AuthController {
 
     @PostMapping("/register")
     @Operation(operationId = "registerUser", summary = "Create a login (joins the default tenant)")
+    @ApiResponse(responseCode = "201", description = "Created", useReturnTypeSchema = true)
     ResponseEntity<RegisterUserResponse> register(@Valid @RequestBody RegisterUserRequest request) {
         UserId id = registerUser.register(
                 new RegisterUserCommand(defaultTenant, new Email(request.email()), request.password()));

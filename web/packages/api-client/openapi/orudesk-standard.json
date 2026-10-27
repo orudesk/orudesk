@@ -169,7 +169,7 @@
           "required" : true
         },
         "responses" : {
-          "200" : {
+          "201" : {
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -177,7 +177,7 @@
                 }
               }
             },
-            "description" : "OK"
+            "description" : "Created"
           }
         },
         "security" : [ ],
@@ -216,7 +216,7 @@
           "required" : true
         },
         "responses" : {
-          "200" : {
+          "201" : {
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -224,7 +224,7 @@
                 }
               }
             },
-            "description" : "OK"
+            "description" : "Created"
           }
         },
         "summary" : "Add a school, branch or group below an existing unit",
@@ -315,7 +315,7 @@
           "required" : true
         },
         "responses" : {
-          "200" : {
+          "201" : {
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -323,7 +323,7 @@
                 }
               }
             },
-            "description" : "OK"
+            "description" : "Created"
           }
         },
         "summary" : "Add a person to the registry",
@@ -356,6 +356,71 @@
         },
         "summary" : "One person",
         "tags" : [ "People" ]
+      }
+    },
+    "/api/v1/roles" : {
+      "get" : {
+        "operationId" : "listRoles",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/RoleDetails"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Every role that can be granted",
+        "tags" : [ "Roles" ]
+      }
+    },
+    "/api/v1/users" : {
+      "get" : {
+        "operationId" : "listUsers",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "q",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "after",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserPage"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "The tenant's users with their roles, one page at a time",
+        "tags" : [ "Users" ]
       }
     },
     "/api/v1/users/me" : {
@@ -405,6 +470,42 @@
           }
         },
         "summary" : "Give a user a role, for the whole tenant or one org unit",
+        "tags" : [ "Users" ]
+      }
+    },
+    "/api/v1/users/{userId}/roles/{role}" : {
+      "delete" : {
+        "operationId" : "revokeRole",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "userId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "in" : "path",
+          "name" : "role",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "orgUnitId",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "summary" : "Take a role away from a user, tenant-wide or in one org unit",
         "tags" : [ "Users" ]
       }
     }
@@ -632,6 +733,21 @@
         },
         "required" : [ "id" ]
       },
+      "RoleDetails" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : [ "string", "null" ]
+          },
+          "name" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "code", "name" ]
+      },
       "TokenResponse" : {
         "type" : "object",
         "properties" : {
@@ -676,6 +792,21 @@
         },
         "required" : [ "code", "id", "name", "roles", "type" ]
       },
+      "UserPage" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserSummary"
+            }
+          },
+          "nextCursor" : {
+            "type" : [ "string", "null" ]
+          }
+        },
+        "required" : [ "items" ]
+      },
       "UserProfile" : {
         "type" : "object",
         "properties" : {
@@ -707,6 +838,28 @@
           }
         },
         "required" : [ "email", "enabled", "grants", "id", "roles", "tenantId" ]
+      },
+      "UserSummary" : {
+        "type" : "object",
+        "properties" : {
+          "email" : {
+            "type" : "string"
+          },
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "grants" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Grant"
+            }
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        },
+        "required" : [ "email", "enabled", "grants", "id" ]
       }
     },
     "securitySchemes" : {

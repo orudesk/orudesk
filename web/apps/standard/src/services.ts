@@ -2,6 +2,8 @@ import { createOrudeskClient, type OrudeskClient } from '@orudesk/api-client';
 import { QueryClient } from '@tanstack/react-query';
 import { authFetch } from './auth/authFetch';
 import { AuthSession } from './auth/session';
+import { UnitStore } from './units/unitStore';
+import { withOrgUnit } from './units/withOrgUnit';
 
 /**
  * Everything the app shares, created once in main.tsx and handed down through React context. The same idea as
@@ -10,6 +12,7 @@ import { AuthSession } from './auth/session';
  */
 export interface Services {
   session: AuthSession;
+  units: UnitStore;
   api: OrudeskClient;
   queryClient: QueryClient;
 }
@@ -18,7 +21,9 @@ export function createServices(): Services {
   // `fetch` is looked up on every call rather than once, so tests can replace it with vi.stubGlobal.
   const plainFetch = (request: Request) => globalThis.fetch(request);
   const session = new AuthSession(createOrudeskClient({ fetch: plainFetch }));
-  const api = createOrudeskClient({ fetch: authFetch(session) });
+  const units = new UnitStore();
+  // Each request passes through: add X-Org-Unit, then add the token (and retry once on 401), then fetch.
+  const api = createOrudeskClient({ fetch: withOrgUnit(units, authFetch(session)) });
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
   });
@@ -26,5 +31,5 @@ export function createServices(): Services {
   session.subscribe(() => {
     if (session.getStatus() === 'signedOut') queryClient.clear();
   });
-  return { session, api, queryClient };
+  return { session, units, api, queryClient };
 }

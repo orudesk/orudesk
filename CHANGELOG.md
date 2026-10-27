@@ -14,9 +14,20 @@ Every release of the Orudesk core, newest first. The format follows
   as an HttpOnly, Secure, SameSite=Strict cookie (path `/api/v1/auth`) instead of in the JSON body, and
   `/refresh` and `/logout` read it from there. Clients that don't send the header work as before.
 - CORS, off by default: `ORUDESK_WEB_ALLOWED_ORIGINS` lists other origins whose pages may call the API.
+- `GET /api/v1/users` (admins): the tenant's users with their grants, sorted by email, searchable by part of
+  the address (`q`), paged with a cursor (`after`, `size` up to 100).
+- `GET /api/v1/roles`: the roles there are, with names and descriptions.
+- `DELETE /api/v1/users/{userId}/roles/{role}` (optional `orgUnitId`): takes one grant away, with the same
+  rule as assigning about who may do it. 409 if the user would be left without a role, or if an admin tries to
+  remove their own tenant-wide ADMIN role.
+- Web app: sign-in, the app shell, the org unit switcher, a Users screen for admins where they give and
+  take away roles, and People screens (search, add with the server's field errors, one person's page).
 
 ### Changed
 
+- The contract says 201 Created (not 200) for `POST /api/v1/auth/register`, `/api/v1/org-units` and
+  `/api/v1/people`, as the API has always answered.
+- Assigning a role to a disabled user answers 409 "Role change not allowed" instead of 500.
 - The OpenAPI contract says which fields are always present: record components are required unless they
   are `@Nullable` (JSpecify), and nullable ones have type `[..., "null"]`. The contract is sorted and
   indented, so it diffs cleanly.
