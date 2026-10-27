@@ -4,6 +4,7 @@ import com.orudesk.orudesk.identity.application.port.in.*;
 import com.orudesk.orudesk.identity.domain.Email;
 import com.orudesk.orudesk.identity.domain.EmailAlreadyRegisteredException;
 import com.orudesk.orudesk.identity.domain.InvalidCredentialsException;
+import com.orudesk.orudesk.identity.domain.TooManyLoginAttemptsException;
 import com.orudesk.orudesk.identity.domain.UserId;
 import com.orudesk.orudesk.shared.adapter.in.security.SecurityConfig;
 import jakarta.servlet.http.Cookie;
@@ -15,6 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.Duration;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -114,6 +116,20 @@ class AuthControllerTest {
                                 """))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.title").value("Login failed"));
+    }
+
+    @Test
+    void aBlockedLoginReturns429WithRetryAfter() throws Exception {
+        given(login.login(any(LoginCommand.class))).willThrow(new TooManyLoginAttemptsException(Duration.ofSeconds(754)));
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email": "ck@orudesk.org", "password": "a-guess"}
+                                """))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(header().string("Retry-After", "754"))
+                .andExpect(jsonPath("$.title").value("Too many login attempts"));
     }
 
     @Test

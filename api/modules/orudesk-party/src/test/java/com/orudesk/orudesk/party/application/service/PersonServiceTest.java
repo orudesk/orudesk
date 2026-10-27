@@ -24,7 +24,7 @@ class PersonServiceTest {
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-10-23T09:00:00Z"), ZoneOffset.UTC);
 
     private final InMemoryPersonStore store = new InMemoryPersonStore();
-    private final PersonService service = new PersonService(store, store, store, CLOCK);
+    private final PersonService service = new PersonService(store, store, store, CLOCK, event -> { });
 
     @Test
     void registersAPersonAndReadsItBack() {

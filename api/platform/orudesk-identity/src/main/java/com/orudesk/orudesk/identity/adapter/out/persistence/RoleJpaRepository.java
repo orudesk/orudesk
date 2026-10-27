@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -13,6 +14,8 @@ interface RoleJpaRepository extends JpaRepository<RoleJpaEntity, UUID> {
     boolean existsByCode(String code);
 
     Set<RoleJpaEntity> findByCodeIn(Collection<String> codes);
+
+    List<RoleJpaEntity> findAllByOrderByCode();
 
     /**
      * One statement, so two app instances starting at the same time can't both insert the role: the second

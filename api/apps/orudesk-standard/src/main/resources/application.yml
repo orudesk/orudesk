@@ -16,6 +16,10 @@ spring:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:orudesk}
     username: ${DB_USERNAME:orudesk_app}
     password: ${DB_PASSWORD}
+    hikari:
+      # How long a request waits for a free connection. The default, 30 s, means a user stares at a spinner for
+      # half a minute when the database is down; 5 s fails fast with a 503 the web app explains.
+      connection-timeout: 5000   # milliseconds: Hikari binds a plain number, not "5s"
 
   jpa:
     hibernate:
@@ -29,6 +33,13 @@ spring:
       # Give up quickly when Redis is unreachable, instead of hanging every request for a minute.
       connect-timeout: 2s
       timeout: 2s
+
+# Each log line carries the request's id (RequestIdFilter), so one request's lines can be found together.
+# In containers, LOGGING_STRUCTURED_FORMAT_CONSOLE=ecs (compose.yaml) writes JSON lines instead, with the id as a
+# field: what log tools (Loki, Elasticsearch, CloudWatch) read without parsing text.
+logging:
+  pattern:
+    correlation: "[%X{request_id:-}] "
 
 server:
   port: ${SERVER_PORT:8080}
@@ -49,6 +60,13 @@ orudesk:
       refresh-token-ttl: 14d
     refresh-cookie:
       secure: ${ORUDESK_REFRESH_COOKIE_SECURE:true}   # HTTPS only. The local profile turns it off for http://localhost
+    login:
+      # After this many failed logins for one email, that email is blocked until `window` after the first failure
+      max-failures: ${ORUDESK_LOGIN_MAX_FAILURES:5}
+      window: ${ORUDESK_LOGIN_WINDOW:15m}
+  metrics:
+    # The secret Prometheus sends to read /actuator/prometheus (at least 32 characters). Empty: nobody can.
+    token: ${ORUDESK_METRICS_TOKEN:}
   web:
     # Other origins whose pages may call the API (CORS), comma-separated. Empty: only the same origin.
     allowed-origins: ${ORUDESK_WEB_ALLOWED_ORIGINS:}
@@ -58,7 +76,8 @@ management:
   endpoints:
     web:
       exposure:
-        include: health, info       # nothing else over HTTP: env, beans and heapdump leak secrets
+        include: health, info, prometheus   # nothing else over HTTP: env, beans and heapdump leak secrets.
+                                            # prometheus needs the metrics token (MetricsSecurityConfig)
   endpoint:
     health:
       probes:
@@ -68,6 +87,9 @@ management:
         readiness:
           include: readinessState, db   # no database, no traffic. Liveness never checks the DB: a DB outage
                                         # must not make the orchestrator restart every app instance at once.
+  metrics:
+    tags:
+      application: ${spring.application.name}   # on every metric, so one Prometheus can watch several editions
   health:
     redis:
       enabled: false                # Redis down means 503 on login, not "restart me" or "send no traffic" (Day 12)

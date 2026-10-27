@@ -4,6 +4,7 @@ import com.orudesk.orudesk.party.application.port.in.GetPersonQuery;
 import com.orudesk.orudesk.party.application.port.in.PeopleSearch;
 import com.orudesk.orudesk.party.application.port.in.PersonDetails;
 import com.orudesk.orudesk.party.application.port.in.PersonPage;
+import com.orudesk.orudesk.party.application.port.in.PersonRegistered;
 import com.orudesk.orudesk.party.application.port.in.RegisterPersonCommand;
 import com.orudesk.orudesk.party.application.port.in.RegisterPersonUseCase;
 import com.orudesk.orudesk.party.application.port.in.SearchPeopleQuery;
@@ -15,6 +16,7 @@ import com.orudesk.orudesk.party.domain.Person;
 import com.orudesk.orudesk.party.domain.PersonId;
 import com.orudesk.orudesk.party.domain.PersonName;
 import com.orudesk.orudesk.party.domain.PersonNotFoundException;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,9 +34,11 @@ public class PersonService implements RegisterPersonUseCase, GetPersonQuery, Sea
     private final LoadPersonPort loadPersonPort;
     private final SearchPeoplePort searchPeoplePort;
     private final Clock clock;
+    private final ApplicationEventPublisher events;
 
     public PersonService(SavePersonPort savePersonPort, LoadPersonPort loadPersonPort,
-                         SearchPeoplePort searchPeoplePort, Clock clock) {
+                         SearchPeoplePort searchPeoplePort, Clock clock, ApplicationEventPublisher events) {
+        this.events = events;
         this.savePersonPort = savePersonPort;
         this.loadPersonPort = loadPersonPort;
         this.searchPeoplePort = searchPeoplePort;
@@ -48,6 +52,8 @@ public class PersonService implements RegisterPersonUseCase, GetPersonQuery, Sea
                 command.dateOfBirth(), command.phone(), command.email(),
                 LocalDate.now(clock));
         savePersonPort.save(person);
+        events.publishEvent(new PersonRegistered(person.id().value(),
+                person.name().first() + " " + person.name().last()));
         return person.id().value();
     }
 

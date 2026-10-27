@@ -7,7 +7,7 @@
       "name" : "AGPL-3.0-only"
     },
     "title" : "Orudesk Standard API",
-    "version" : "1.1.0-SNAPSHOT"
+    "version" : "1.2.0-SNAPSHOT"
   },
   "externalDocs" : {
     "description" : "Source code",
@@ -42,6 +42,50 @@
         "security" : [ ],
         "summary" : "Is the API up?",
         "tags" : [ "Health" ]
+      }
+    },
+    "/api/v1/audit-entries" : {
+      "get" : {
+        "operationId" : "listAuditEntries",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "subjectId",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "in" : "query",
+          "name" : "after",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 50
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AuditPage"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "What changed, who changed it and when, newest first; optionally for one user, person or unit",
+        "tags" : [ "Audit" ]
       }
     },
     "/api/v1/auth/login" : {
@@ -169,7 +213,7 @@
           "required" : true
         },
         "responses" : {
-          "200" : {
+          "201" : {
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -177,7 +221,7 @@
                 }
               }
             },
-            "description" : "OK"
+            "description" : "Created"
           }
         },
         "security" : [ ],
@@ -216,7 +260,7 @@
           "required" : true
         },
         "responses" : {
-          "200" : {
+          "201" : {
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -224,7 +268,7 @@
                 }
               }
             },
-            "description" : "OK"
+            "description" : "Created"
           }
         },
         "summary" : "Add a school, branch or group below an existing unit",
@@ -315,7 +359,7 @@
           "required" : true
         },
         "responses" : {
-          "200" : {
+          "201" : {
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -323,7 +367,7 @@
                 }
               }
             },
-            "description" : "OK"
+            "description" : "Created"
           }
         },
         "summary" : "Add a person to the registry",
@@ -356,6 +400,71 @@
         },
         "summary" : "One person",
         "tags" : [ "People" ]
+      }
+    },
+    "/api/v1/roles" : {
+      "get" : {
+        "operationId" : "listRoles",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/RoleDetails"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Every role that can be granted",
+        "tags" : [ "Roles" ]
+      }
+    },
+    "/api/v1/users" : {
+      "get" : {
+        "operationId" : "listUsers",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "q",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "after",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "size",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserPage"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "The tenant's users with their roles, one page at a time",
+        "tags" : [ "Users" ]
       }
     },
     "/api/v1/users/me" : {
@@ -407,6 +516,42 @@
         "summary" : "Give a user a role, for the whole tenant or one org unit",
         "tags" : [ "Users" ]
       }
+    },
+    "/api/v1/users/{userId}/roles/{role}" : {
+      "delete" : {
+        "operationId" : "revokeRole",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "userId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "in" : "path",
+          "name" : "role",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "orgUnitId",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "summary" : "Take a role away from a user, tenant-wide or in one org unit",
+        "tags" : [ "Users" ]
+      }
     }
   },
   "components" : {
@@ -424,6 +569,58 @@
           }
         },
         "required" : [ "role" ]
+      },
+      "AuditEntryDetails" : {
+        "type" : "object",
+        "properties" : {
+          "action" : {
+            "type" : "string"
+          },
+          "actorEmail" : {
+            "type" : [ "string", "null" ]
+          },
+          "actorId" : {
+            "type" : [ "string", "null" ],
+            "format" : "uuid"
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "occurredAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "requestId" : {
+            "type" : [ "string", "null" ]
+          },
+          "subjectId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "subjectType" : {
+            "type" : "string"
+          },
+          "summary" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "action", "id", "occurredAt", "subjectId", "subjectType", "summary" ]
+      },
+      "AuditPage" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AuditEntryDetails"
+            }
+          },
+          "nextCursor" : {
+            "type" : [ "string", "null" ]
+          }
+        },
+        "required" : [ "items" ]
       },
       "CreateOrgUnitRequest" : {
         "type" : "object",
@@ -632,6 +829,21 @@
         },
         "required" : [ "id" ]
       },
+      "RoleDetails" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : [ "string", "null" ]
+          },
+          "name" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "code", "name" ]
+      },
       "TokenResponse" : {
         "type" : "object",
         "properties" : {
@@ -676,6 +888,21 @@
         },
         "required" : [ "code", "id", "name", "roles", "type" ]
       },
+      "UserPage" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/UserSummary"
+            }
+          },
+          "nextCursor" : {
+            "type" : [ "string", "null" ]
+          }
+        },
+        "required" : [ "items" ]
+      },
       "UserProfile" : {
         "type" : "object",
         "properties" : {
@@ -707,6 +934,28 @@
           }
         },
         "required" : [ "email", "enabled", "grants", "id", "roles", "tenantId" ]
+      },
+      "UserSummary" : {
+        "type" : "object",
+        "properties" : {
+          "email" : {
+            "type" : "string"
+          },
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "grants" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Grant"
+            }
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        },
+        "required" : [ "email", "enabled", "grants", "id" ]
       }
     },
     "securitySchemes" : {

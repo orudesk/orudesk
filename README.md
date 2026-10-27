@@ -3,16 +3,31 @@
 **An open source ERP for organisations that serve people**: schools, hospitals and clinics, NGOs.
 One core (login, roles, organisation units, a people registry) and an edition per sector built on it.
 
-> Status: backend release 1 (1.0.0). The web app is being built in `web/`.
+> Status: 1.1.0, the MVP: the API and the web app. Try it with the demo below.
 
 ## Editions
 
 | Repository | Edition | First feature |
 |---|---|---|
 | [orudesk/orudesk](https://github.com/orudesk/orudesk) | **Core** and the standard edition | Login, roles, org units, people registry |
-| orudesk/orudesk-ngo | NGOs | Donor registration |
-| orudesk/orudesk-school | Schools | Student admission |
-| orudesk/orudesk-hms | Hospitals and clinics | Patient registration |
+| [orudesk/orudesk-ngo](https://github.com/orudesk/orudesk-ngo) | NGOs | Donor registration |
+| [orudesk/orudesk-school](https://github.com/orudesk/orudesk-school) | Schools | Student admission |
+| [orudesk/orudesk-healthcare](https://github.com/orudesk/orudesk-healthcare) | Hospitals and clinics | Patient registration |
+
+## Try it: the demo
+
+You need only **Docker** (Docker Desktop, Colima or Podman) and this repository. One command:
+
+```bash
+git clone https://github.com/orudesk/orudesk.git
+cd orudesk
+docker compose --env-file docker/demo.env -f docker/compose.yaml --profile app up -d --build --wait
+```
+
+Open <http://localhost:8090> and log in as `admin@demo.orudesk.org` with the password `demo-password`. The
+demo has two schools and a clinic, a dozen people, and users with roles in one school only
+(`principal@demo.orudesk.org`, same password). Remove it with
+`docker compose -f docker/compose.yaml --profile app down -v`.
 
 ## Quick start: run it
 
@@ -25,9 +40,9 @@ cp api/.env.example api/.env        # then set DB_PASSWORD, ORUDESK_JWT_SECRET a
 docker compose --env-file api/.env -f docker/compose.yaml --profile app up -d --build --wait
 ```
 
-The first build takes a few minutes (it compiles the API inside Docker). Then the API is on
-<http://localhost:8081>; `--wait` returns once `/actuator/health/readiness` says UP. Instead of building,
-you can run a released image: set `ORUDESK_VERSION=1.0.0` in `api/.env` and leave out `--build`.
+The first build takes a few minutes (it compiles the API and the web app inside Docker). Then Orudesk is on
+<http://localhost:8090> (the API alone on <http://localhost:8081>); `--wait` returns once both are healthy. Instead of building,
+you can run a released image: set `ORUDESK_VERSION=1.1.0` in `api/.env` and leave out `--build`.
 
 Stop it with `docker compose -f docker/compose.yaml --profile app down` (add `-v` to delete the data too).
 
@@ -61,7 +76,37 @@ Interactive API docs: <http://localhost:8080/swagger-ui.html>. The OpenAPI contr
   this one checks the database) need no token and say only UP or DOWN. Point your orchestrator at them.
 - Back up the PostgreSQL volume. Redis holds only refresh tokens and caches: losing it logs everyone out,
   nothing more.
-- Put TLS in front (a reverse proxy such as Caddy or nginx); the app speaks plain HTTP.
+- HTTPS: set `ORUDESK_SITE=erp.example.org` (your domain, pointing at the server) and publish ports 80 and
+  443 for the `web` service; Caddy gets and renews the certificate. Outside `localhost` the site must be
+  HTTPS, because the login cookie is `Secure`.
+- `web` is the only service that needs to be reachable from outside; the API's port can stay closed.
+- **Logs** are JSON lines (Elastic Common Schema) in containers; `ORUDESK_LOG_FORMAT=logstash` or `gelf` if your
+  log tool prefers those. Every request has an id: the web app sends `X-Request-Id`, the API logs it as
+  `request_id` and returns it, and Caddy's access log has it too. Find one request with
+  `docker compose -f docker/compose.yaml logs app | grep <id>`.
+- **Metrics** for Prometheus at `/actuator/prometheus` on the API (port 8080 inside the network), readable with
+  `ORUDESK_METRICS_TOKEN`:
+
+  ```yaml
+  scrape_configs:
+    - job_name: orudesk
+      metrics_path: /actuator/prometheus
+      authorization: { credentials_file: /etc/prometheus/orudesk-metrics-token }
+      static_configs: [{ targets: ['app:8080'] }]
+  ```
+
+  Useful series: `http_server_requests_seconds` (by `uri`, `status`), `hikaricp_connections_pending`,
+  `jvm_memory_used_bytes`. Failed logins per minute:
+  `sum(rate(http_server_requests_seconds_count{uri="/api/v1/auth/login",status="401"}[5m])) * 60`.
+
+- **Failed logins** are limited per email: 5 within 15 minutes, then `429` until the 15 minutes are up
+  (`ORUDESK_LOGIN_MAX_FAILURES`, `ORUDESK_LOGIN_WINDOW`). A person who is locked out waits, or you clear
+  their count in Redis (the key holds a hash of the lower-case email):
+  `redis-cli DEL orudesk:login-failures:$(printf %s asha@example.org | sha256sum | cut -d' ' -f1)`. Watch the rate of 401s and 429s on
+  `/api/v1/auth/login` in your metrics: a spike is someone guessing.
+- **Audit log**: the Activity page (or `GET /api/v1/audit-entries`) says who changed what and when, with the
+  request id to find in the logs. Entries can't be edited or deleted, not even with SQL; keep them in your
+  backups like any other data.
 
 ## Run the tests
 
@@ -90,10 +135,11 @@ modules you need, without versions:
 
 ```groovy
 dependencies {
-    implementation platform('com.orudesk:orudesk-bom:1.0.0')
+    implementation platform('com.orudesk:orudesk-bom:1.1.0')
     implementation 'com.orudesk:orudesk-platform-core'
     implementation 'com.orudesk:orudesk-identity'
     implementation 'com.orudesk:orudesk-party'
+    implementation 'com.orudesk:orudesk-audit'
 }
 ```
 

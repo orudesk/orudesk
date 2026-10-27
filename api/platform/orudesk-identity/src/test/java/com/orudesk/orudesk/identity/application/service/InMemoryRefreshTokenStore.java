@@ -29,4 +29,8 @@ class InMemoryRefreshTokenStore implements RefreshTokenStore {
     public void revoke(String refreshToken) {
         tokens.remove(refreshToken);
     }
+
+    int size() {
+        return tokens.size();
+    }
 }

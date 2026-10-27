@@ -6,10 +6,14 @@ import com.orudesk.orudesk.identity.domain.InvalidRefreshTokenException;
 import com.orudesk.orudesk.identity.domain.MissingOrgUnitException;
 import com.orudesk.orudesk.identity.domain.OrgUnitCodeTakenException;
 import com.orudesk.orudesk.identity.domain.OrgUnitNotFoundException;
+import com.orudesk.orudesk.identity.domain.RoleChangeNotAllowedException;
+import com.orudesk.orudesk.identity.domain.TooManyLoginAttemptsException;
 import com.orudesk.orudesk.identity.domain.UnknownRoleException;
 import com.orudesk.orudesk.identity.domain.UserNotFoundException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -37,6 +41,15 @@ class IdentityExceptionHandler {
         return problem(HttpStatus.UNAUTHORIZED, "Login failed", e.getMessage());
     }
 
+    /** 429 with Retry-After (in seconds), the standard way to say "slow down" that clients and proxies understand. */
+    @ExceptionHandler(TooManyLoginAttemptsException.class)
+    ResponseEntity<ProblemDetail> tooManyLoginAttempts(TooManyLoginAttemptsException e) {
+        long seconds = Math.max(1, e.retryAfter().toSeconds());
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, Long.toString(seconds))
+                .body(problem(HttpStatus.TOO_MANY_REQUESTS, "Too many login attempts", e.getMessage()));
+    }
+
     @ExceptionHandler(InvalidRefreshTokenException.class)
     ProblemDetail invalidRefreshToken(InvalidRefreshTokenException e) {
         return problem(HttpStatus.UNAUTHORIZED, "Invalid refresh token", e.getMessage());
@@ -55,6 +68,11 @@ class IdentityExceptionHandler {
     @ExceptionHandler(MissingOrgUnitException.class)
     ProblemDetail missingOrgUnit(MissingOrgUnitException e) {
         return problem(HttpStatus.BAD_REQUEST, "Org unit missing", e.getMessage());
+    }
+
+    @ExceptionHandler(RoleChangeNotAllowedException.class)
+    ProblemDetail roleChangeNotAllowed(RoleChangeNotAllowedException e) {
+        return problem(HttpStatus.CONFLICT, "Role change not allowed", e.getMessage());
     }
 
     private static ProblemDetail problem(HttpStatus status, String title, String detail) {

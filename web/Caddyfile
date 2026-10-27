@@ -1,0 +1,47 @@
+# The web server in front of Orudesk: serves the web app's files and passes /api to the API, so the browser
+# sees one origin (no CORS, and the refresh cookie just works).
+#
+# ORUDESK_SITE is the address Caddy answers on. ":80" (the default) is plain HTTP, for trying it locally.
+# Set it to your domain ("erp.example.org") and Caddy gets and renews an HTTPS certificate by itself; the
+# refresh cookie is Secure, so outside localhost the site must be HTTPS.
+{$ORUDESK_SITE::80} {
+	encode zstd gzip
+
+	# An access log line per request, as JSON, with the X-Request-Id the web app sent (in the request headers)
+	# or the API made (in the response headers). Caddy leaves cookies and Authorization out of it.
+	log
+
+	handle /api/* {
+		reverse_proxy {$ORUDESK_API:app:8080}
+	}
+
+	handle {
+		root * /srv
+		# A single-page app: /people/42 is not a file, so every unknown path gets index.html and the
+		# router in the browser takes over.
+		try_files {path} /index.html
+		file_server
+
+		# Files under /assets have a hash in their name: a new version is a new name, so they can be
+		# cached for a year. index.html must always be fresh, or a browser keeps asking for old files.
+		@hashed path /assets/*
+		header @hashed Cache-Control "public, max-age=31536000, immutable"
+		@page not path /assets/*
+		header @page Cache-Control "no-cache"
+	}
+
+	header {
+		# Only this site's own scripts and styles; nothing may frame the app (clickjacking).
+		# "?": only if the response has none, so the API's own stricter policies (Day 43) pass through as they are.
+		?Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+		X-Content-Type-Options nosniff
+		?Referrer-Policy strict-origin-when-cross-origin
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		# Only ever HTTPS from now on, for a year. Browsers ignore this header on plain http:// (the local demo),
+		# so it only takes effect once ORUDESK_SITE is a real domain with a certificate.
+		Strict-Transport-Security "max-age=31536000"
+		# A page opened from Orudesk (or that opened it) can't reach back into its window
+		Cross-Origin-Opener-Policy same-origin
+		-Server
+	}
+}

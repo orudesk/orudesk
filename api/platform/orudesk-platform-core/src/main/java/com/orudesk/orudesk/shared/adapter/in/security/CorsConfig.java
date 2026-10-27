@@ -32,8 +32,9 @@ class CorsConfig {
         api.setAllowedOrigins(allowed);   // exact origins: never "*" together with credentials
         api.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE"));
         api.setAllowedHeaders(List.of(HttpHeaders.AUTHORIZATION, HttpHeaders.CONTENT_TYPE,
-                "X-Org-Unit", "X-Refresh-Token-Transport"));
-        api.setExposedHeaders(List.of(HttpHeaders.LOCATION));   // so the app can read where a created thing lives
+                "X-Org-Unit", "X-Refresh-Token-Transport", "X-Request-Id"));
+        // So the app can read where a created thing lives, and which request it was (for a bug report)
+        api.setExposedHeaders(List.of(HttpHeaders.LOCATION, "X-Request-Id"));
         api.setAllowCredentials(true);    // the refresh cookie
         api.setMaxAge(Duration.ofHours(1));   // the browser may skip the preflight for an hour
         source.registerCorsConfiguration("/api/**", api);

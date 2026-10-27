@@ -1,17 +1,23 @@
 package com.orudesk.orudesk.identity.adapter.in.web;
 
 import com.orudesk.orudesk.identity.application.port.in.AssignRoleUseCase;
+import com.orudesk.orudesk.identity.application.port.in.RevokeRoleUseCase;
 import com.orudesk.orudesk.identity.domain.OrgUnitId;
 import com.orudesk.orudesk.identity.domain.RoleCode;
 import com.orudesk.orudesk.identity.domain.UserId;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -24,9 +30,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 class UserRoleController {
 
     private final AssignRoleUseCase assignRole;
+    private final RevokeRoleUseCase revokeRole;
 
-    UserRoleController(AssignRoleUseCase assignRole) {
+    UserRoleController(AssignRoleUseCase assignRole, RevokeRoleUseCase revokeRole) {
         this.assignRole = assignRole;
+        this.revokeRole = revokeRole;
     }
 
     /**
@@ -44,5 +52,22 @@ class UserRoleController {
         } else {
             assignRole.assignRoleAt(new UserId(userId), role, new OrgUnitId(request.orgUnitId()));
         }
+    }
+
+    /**
+     * The reverse of assignRole, with the same rule about who may do it. The grant is named in the URL (role in
+     * the path, unit as a query parameter), because a DELETE has no body. Removing a grant the user doesn't have
+     * is not an error: DELETE is idempotent, and the result (the user doesn't have it) is what was asked for.
+     */
+    @DeleteMapping("/{userId}/roles/{role}")
+    @Operation(operationId = "revokeRole", summary = "Take a role away from a user, tenant-wide or in one org unit")
+    @PreAuthorize("hasRole('ADMIN') or (#orgUnitId != null and @orgAccess.currentUserHasRoleAt('ADMIN', #orgUnitId))")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void revokeRole(@PathVariable UUID userId, @PathVariable String role,
+                    @RequestParam(required = false) @Nullable UUID orgUnitId,
+                    @AuthenticationPrincipal Jwt jwt) {
+        revokeRole.revokeRole(new UserId(userId), new RoleCode(role),
+                orgUnitId == null ? null : new OrgUnitId(orgUnitId),
+                new UserId(UUID.fromString(jwt.getSubject())));
     }
 }

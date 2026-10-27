@@ -2,8 +2,10 @@
 # From the repo root:  docker compose --env-file api/.env -f docker/compose.yaml up -d
 # --env-file reads DB_PASSWORD from your api/.env, so the password lives in one place.
 #
-# The whole product, the API too (what a self-hoster runs):
-#   docker compose --env-file api/.env -f docker/compose.yaml --profile app up -d --build
+# The whole product, the API and the web app too (what a self-hoster runs), on http://localhost:8090:
+#   docker compose --env-file api/.env -f docker/compose.yaml --profile app up -d --build --wait
+# A demo with sample data and no setup at all:
+#   docker compose --env-file docker/demo.env -f docker/compose.yaml --profile app up -d --build --wait
 # A service with a profile only starts when you ask for that profile, so day-to-day development
 # (API in your IDE, database in Docker) is unchanged.
 name: orudesk
@@ -55,6 +57,10 @@ services:
       ORUDESK_JWT_SECRET: ${ORUDESK_JWT_SECRET:?set ORUDESK_JWT_SECRET in api/.env}
       ORUDESK_ADMIN_EMAIL: ${ORUDESK_ADMIN_EMAIL:-}
       ORUDESK_ADMIN_PASSWORD: ${ORUDESK_ADMIN_PASSWORD:-}
+      SPRING_PROFILES_ACTIVE: ${ORUDESK_PROFILES:-}   # "demo" loads sample data (docker/demo.env)
+      # Logs as JSON lines (Elastic Common Schema), for a log tool; ORUDESK_LOG_FORMAT=logstash or gelf also work
+      LOGGING_STRUCTURED_FORMAT_CONSOLE: ${ORUDESK_LOG_FORMAT:-ecs}
+      ORUDESK_METRICS_TOKEN: ${ORUDESK_METRICS_TOKEN:-}   # lets Prometheus read /actuator/prometheus
     ports:
       - "8081:8080"   # 8081 on your machine, so a bootRun on 8080 can run at the same time
     depends_on:
@@ -64,6 +70,28 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # The web app, and the one door in: Caddy serves the app's files and passes /api to the API. Set
+  # ORUDESK_SITE to your domain and Caddy gets an HTTPS certificate by itself (then publish 80 and 443).
+  web:
+    profiles: [app]
+    build:
+      context: ../web
+      args:
+        APP: standard
+    image: ghcr.io/orudesk/orudesk-standard-web:${ORUDESK_VERSION:-latest}
+    environment:
+      ORUDESK_SITE: ${ORUDESK_SITE:-:80}
+      ORUDESK_API: app:8080
+    ports:
+      - "8090:80"
+    volumes:
+      - caddy-data:/data   # the HTTPS certificates, so a restart doesn't ask Let's Encrypt again
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
+  caddy-data:
   postgres-data:
   redis-data:

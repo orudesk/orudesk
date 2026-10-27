@@ -1,0 +1,13 @@
+// The audit log: who changed what, and when. Owns the audit_ tables. Listens to every module's
+// AuditableEvent without depending on any module but platform-core.
+plugins {
+    id 'orudesk.published-library'
+}
+
+description = 'Orudesk audit log'
+
+dependencies {
+    implementation project(':platform:orudesk-platform-core')
+
+    testImplementation testFixtures(project(':platform:orudesk-platform-core'))
+}

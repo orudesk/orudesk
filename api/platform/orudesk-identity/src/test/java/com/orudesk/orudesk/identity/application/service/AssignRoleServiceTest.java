@@ -1,5 +1,6 @@
 package com.orudesk.orudesk.identity.application.service;
 
+import com.orudesk.orudesk.identity.application.port.in.RoleGranted;
 import com.orudesk.orudesk.identity.domain.Email;
 import com.orudesk.orudesk.identity.domain.OrgUnit;
 import com.orudesk.orudesk.identity.domain.OrgUnitId;
@@ -15,6 +16,8 @@ import com.orudesk.orudesk.identity.domain.UserId;
 import com.orudesk.orudesk.identity.domain.UserNotFoundException;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,7 +29,8 @@ class AssignRoleServiceTest {
 
     private final InMemoryUserStore store = new InMemoryUserStore();
     private final InMemoryOrgUnitStore units = new InMemoryOrgUnitStore();
-    private final AssignRoleService service = new AssignRoleService(store, store, store, units);
+    private final List<Object> events = new ArrayList<>();
+    private final AssignRoleService service = new AssignRoleService(store, store, store, units, events::add);
 
     private UserId existingUser() {
         User user = User.register(DEMO, new Email("karthikeyan@orudesk.com"), new PasswordHash("hashed"));
@@ -41,6 +45,19 @@ class AssignRoleServiceTest {
         service.assignRole(id, RoleCode.ADMIN);
 
         assertThat(store.findById(id).orElseThrow().hasRole(RoleCode.ADMIN)).isTrue();
+        assertThat(events).singleElement().isInstanceOfSatisfying(RoleGranted.class, event ->
+                assertThat(event.summary()).isEqualTo("Gave ADMIN in the whole organisation to karthikeyan@orudesk.com"));
+    }
+
+    @Test
+    void givingARoleTheUserAlreadyHasIsNotAnEvent() {
+        UserId id = existingUser();
+        service.assignRole(id, RoleCode.ADMIN);
+        events.clear();
+
+        service.assignRole(id, RoleCode.ADMIN);
+
+        assertThat(events).isEmpty();
     }
 
     @Test

@@ -19,6 +19,7 @@ dependencies {
         api project(':platform:orudesk-platform-core')
         api project(':platform:orudesk-identity')
         api project(':modules:orudesk-party')
+        api project(':modules:orudesk-audit')
     }
 }
 

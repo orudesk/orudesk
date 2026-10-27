@@ -7,6 +7,10 @@ on:
     branches: [main]
   pull_request:
 
+# The token only reads: nothing here pushes, comments or publishes
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -19,7 +23,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '25'
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a   # v4.4.3: a third-party action, pinned to a commit
       - run: ./gradlew test
       # The web app's client is generated from a copy of the contract. If the API changed and the copy didn't,
       # the web app would compile against an API that no longer exists: fail, and say how to fix it.
@@ -43,7 +47,7 @@ jobs:
         working-directory: web
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4          # installs the pnpm version named in web/package.json
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1   # v4.3.0; installs the pnpm version named in web/package.json
         with:
           package_json_file: web/package.json
       - uses: actions/setup-node@v4
@@ -66,10 +70,49 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v6
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f   # v3.12.0
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8   # v6.19.2
         with:
           context: api
           push: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8   # v6.19.2
+        with:
+          context: web
+          push: false
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+
+  # The whole product as a user gets it (the demo: Caddy, the API, PostgreSQL, Redis, built from this commit),
+  # driven by a real browser, at desktop and phone sizes. Slower than the rest, so it runs once they pass.
+  e2e:
+    needs: [test, web]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start the demo
+        run: docker compose --env-file docker/demo.env -f docker/compose.yaml --profile app up -d --build --wait
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1   # v4.3.0; installs the pnpm version named in web/package.json
+        with:
+          package_json_file: web/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: web/.nvmrc
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: web
+      - run: pnpm --filter @orudesk/e2e exec playwright install --with-deps chromium
+        working-directory: web
+      - run: pnpm --filter @orudesk/e2e e2e
+        working-directory: web
+      - name: The API's log, when something failed
+        if: failure()
+        run: docker compose -f docker/compose.yaml --profile app logs app
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: web/e2e/playwright-report/
+

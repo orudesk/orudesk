@@ -9,6 +9,7 @@ import com.orudesk.orudesk.identity.application.port.in.OrgUnitNode;
 import com.orudesk.orudesk.identity.application.port.in.UnitAccess;
 import com.orudesk.orudesk.identity.domain.OrgUnitId;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -46,6 +47,7 @@ class OrgUnitController {
     /** An ADMIN of the parent unit (or of anything above it, or tenant-wide) may add a unit below it. */
     @PostMapping
     @Operation(operationId = "createOrgUnit", summary = "Add a school, branch or group below an existing unit")
+    @ApiResponse(responseCode = "201", description = "Created", useReturnTypeSchema = true)
     @PreAuthorize("@orgAccess.currentUserHasRoleAt('ADMIN', #request.parentId())")
     ResponseEntity<CreateOrgUnitResponse> create(@Valid @RequestBody CreateOrgUnitRequest request) {
         UUID id = createOrgUnit.create(new CreateOrgUnitCommand(
