@@ -1,8 +1,10 @@
 // What every module shares: security, error responses, tenancy, caching setup.
 plugins {
-    id 'orudesk.java-conventions'
+    id 'orudesk.published-library'
     id 'java-test-fixtures'   // src/testFixtures: test helpers that other modules' tests can use
 }
+
+description = 'Shared by every Orudesk module: security, tenancy, error responses, caching'
 
 dependencies {
     // "api": modules that use platform-core also see these, because platform-core's own classes expose them
@@ -15,6 +17,9 @@ dependencies {
     // Only the annotations (@Operation, @Tag) that describe endpoints in the OpenAPI contract. Same version
     // as springdoc in the app uses; springdoc itself stays in the app.
     api 'io.swagger.core.v3:swagger-annotations-jakarta:2.2.38'
+    // RecordNullabilityModelConverter plugs into springdoc's schema generation. compileOnly: it's used only
+    // when an app has springdoc (which brings swagger-core), and the converter's configuration checks that.
+    compileOnly 'io.swagger.core.v3:swagger-core-jakarta:2.2.38'
 
     def springBoot = platform(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
     testFixturesImplementation springBoot

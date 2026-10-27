@@ -1,0 +1,4 @@
+# Every folder under apps/ and packages/ is a package of this workspace (like npm/yarn workspaces).
+packages:
+  - apps/*
+  - packages/*

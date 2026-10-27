@@ -1,0 +1,51 @@
+// What every published artifact needs, whatever it is (a jar or the BOM): the description Maven Central
+// asks for, a local folder to publish to, and signing when a key is given.
+plugins {
+    id 'maven-publish'
+    id 'signing'
+}
+
+group = 'com.orudesk'
+
+publishing {
+    publications.withType(MavenPublication).configureEach {
+        pom {
+            name = project.name
+            description = provider { project.description }   // read later: modules set it after applying this plugin
+            url = 'https://github.com/orudesk/orudesk'
+            licenses {
+                license {
+                    name = 'GNU Affero General Public License v3.0 only'
+                    url = 'https://www.gnu.org/licenses/agpl-3.0.txt'
+                }
+            }
+            developers {
+                developer {
+                    id = 'karthikeyan-live'
+                    name = 'Orudesk maintainers'
+                }
+            }
+            scm {
+                url = 'https://github.com/orudesk/orudesk'
+                connection = 'scm:git:https://github.com/orudesk/orudesk.git'
+            }
+        }
+    }
+    repositories {
+        // A folder in the build holding exactly what would be uploaded, so you can look at it first.
+        // The release workflow zips this folder and uploads it to Maven Central.
+        maven {
+            name = 'staging'
+            url = rootProject.layout.buildDirectory.dir('staging-deploy')
+        }
+    }
+}
+
+// Sign only when a key is given (the release workflow passes one in). Local builds don't need it.
+def signingKey = providers.environmentVariable('SIGNING_KEY')
+if (signingKey.isPresent()) {
+    signing {
+        useInMemoryPgpKeys(signingKey.get(), providers.environmentVariable('SIGNING_PASSWORD').getOrElse(''))
+        sign publishing.publications
+    }
+}

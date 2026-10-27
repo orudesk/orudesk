@@ -21,9 +21,55 @@ jobs:
           java-version: '25'
       - uses: gradle/actions/setup-gradle@v4
       - run: ./gradlew test
+      # The web app's client is generated from a copy of the contract. If the API changed and the copy didn't,
+      # the web app would compile against an API that no longer exists: fail, and say how to fix it.
+      - name: The web client's copy of the OpenAPI contract is up to date
+        run: |
+          diff -u ../web/packages/api-client/openapi/orudesk-standard.json \
+            apps/orudesk-standard/build/openapi/orudesk-standard.json \
+            || { echo "::error::The API contract changed. Run 'pnpm contract:sync' in web/packages/api-client and commit."; exit 1; }
       # The API contract the web app's client is generated from, saved by OpenApiContractTest
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: openapi
           path: api/apps/orudesk-standard/build/openapi/
+
+  # The web app: formatting, lint, type check, unit tests and a production build.
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4          # installs the pnpm version named in web/package.json
+        with:
+          package_json_file: web/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: web/.nvmrc
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile   # like npm ci: fail if the lockfile doesn't match package.json
+      - name: The generated client matches the contract
+        run: |
+          pnpm --filter @orudesk/api-client generate
+          git diff --exit-code -- packages/api-client/src/generated \
+            || { echo "::error::Run 'pnpm generate' in web/packages/api-client and commit."; exit 1; }
+      - run: pnpm check
+      - run: pnpm build
+
+  # The Dockerfile is code too: build the image on every PR (without pushing) so a broken one is caught here,
+  # not on release day.
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: api
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

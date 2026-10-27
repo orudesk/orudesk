@@ -6,6 +6,7 @@ import com.orudesk.orudesk.identity.domain.EmailAlreadyRegisteredException;
 import com.orudesk.orudesk.identity.domain.InvalidCredentialsException;
 import com.orudesk.orudesk.identity.domain.UserId;
 import com.orudesk.orudesk.shared.adapter.in.security.SecurityConfig;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -24,7 +25,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AuthController.class)
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, RefreshTokenCookie.class})
 class AuthControllerTest {
 
     @Autowired
@@ -113,5 +114,59 @@ class AuthControllerTest {
                                 """))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.title").value("Login failed"));
+    }
+
+    @Test
+    void aCookieClientGetsTheRefreshTokenAsAnHttpOnlyCookieAndNotInTheBody() throws Exception {
+        given(login.login(any(LoginCommand.class))).willReturn(new AuthTokens("the-access-token", 900, "the-refresh-token"));
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .header("X-Refresh-Token-Transport", "cookie")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email": "ck@orudesk.org", "password": "secret-password"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").value("the-access-token"))
+                .andExpect(jsonPath("$.refreshToken").doesNotExist())
+                .andExpect(cookie().value("orudesk_refresh", "the-refresh-token"))
+                .andExpect(cookie().httpOnly("orudesk_refresh", true))
+                .andExpect(cookie().secure("orudesk_refresh", true))
+                .andExpect(cookie().sameSite("orudesk_refresh", "Strict"))
+                .andExpect(cookie().path("orudesk_refresh", "/api/v1/auth"))
+                .andExpect(cookie().maxAge("orudesk_refresh", 14 * 24 * 3600));
+    }
+
+    @Test
+    void refreshReadsTheCookieWhenThereIsNoBody() throws Exception {
+        given(refreshTokens.refresh("the-old-refresh-token")).willReturn(new AuthTokens("new-access", 900, "new-refresh"));
+
+        mockMvc.perform(post("/api/v1/auth/refresh")
+                        .header("X-Refresh-Token-Transport", "cookie")
+                        .cookie(new Cookie("orudesk_refresh", "the-old-refresh-token")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").value("new-access"))
+                .andExpect(cookie().value("orudesk_refresh", "new-refresh"));   // rotated: the cookie is replaced
+    }
+
+    @Test
+    void theCookieAloneIsNotEnoughWithoutTheHeader() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/refresh")
+                        .cookie(new Cookie("orudesk_refresh", "the-old-refresh-token")))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.title").value("Invalid refresh token"));
+
+        verify(refreshTokens, never()).refresh(any());
+    }
+
+    @Test
+    void logoutRevokesTheCookiesTokenAndDeletesTheCookie() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/logout")
+                        .header("X-Refresh-Token-Transport", "cookie")
+                        .cookie(new Cookie("orudesk_refresh", "the-refresh-token")))
+                .andExpect(status().isNoContent())
+                .andExpect(cookie().maxAge("orudesk_refresh", 0));
+
+        verify(logout).logout("the-refresh-token");
     }
 }

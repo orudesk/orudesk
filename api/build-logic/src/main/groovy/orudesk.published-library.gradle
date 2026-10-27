@@ -1,0 +1,23 @@
+// Applied by the modules other projects may depend on (the verticals): a jar with its sources and
+// javadoc, published with the description from orudesk.publishing.
+plugins {
+    id 'orudesk.java-conventions'
+    id 'orudesk.publishing'
+}
+
+java {
+    withSourcesJar()   // an IDE shows our source when a vertical's developer clicks into our classes
+    withJavadocJar()   // Maven Central requires one
+}
+
+tasks.named('javadoc') {
+    options.addBooleanOption('Xdoclint:none', true)   // don't fail a release over a missing @param
+}
+
+publishing {
+    publications {
+        library(MavenPublication) {
+            from components.java   // the jar and its dependencies, plus the sources and javadoc jars
+        }
+    }
+}

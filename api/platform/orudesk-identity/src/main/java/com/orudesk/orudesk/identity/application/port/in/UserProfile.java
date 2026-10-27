@@ -1,5 +1,7 @@
 package com.orudesk.orudesk.identity.application.port.in;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -11,6 +13,6 @@ import java.util.UUID;
  */
 public record UserProfile(UUID id, UUID tenantId, String email, List<String> roles, List<Grant> grants, boolean enabled) {
 
-    public record Grant(String role, UUID orgUnitId) {
+    public record Grant(String role, @Nullable UUID orgUnitId) {
     }
 }
