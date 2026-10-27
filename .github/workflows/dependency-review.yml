@@ -22,7 +22,7 @@ jobs:
     # A fork's pull request gets a read-only token: no snapshot then, and the review sees npm only
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
