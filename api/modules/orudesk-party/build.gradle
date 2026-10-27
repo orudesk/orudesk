@@ -8,7 +8,7 @@ description = 'Orudesk people registry'
 dependencies {
     implementation project(':platform:orudesk-platform-core')
     implementation 'org.springframework.boot:spring-boot-starter-validation'
-    implementation platform('org.springframework.modulith:spring-modulith-bom:2.1.1')
+    implementation platform('org.springframework.modulith:spring-modulith-bom:2.1.2')
     implementation 'org.springframework.modulith:spring-modulith-api'   // for @NamedInterface
 
     testImplementation testFixtures(project(':platform:orudesk-platform-core'))

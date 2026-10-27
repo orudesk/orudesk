@@ -18,7 +18,7 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-data-redis'
     testImplementation 'com.tngtech.archunit:archunit-junit5:1.5.1'
-    testImplementation platform('org.springframework.modulith:spring-modulith-bom:2.1.1')
+    testImplementation platform('org.springframework.modulith:spring-modulith-bom:2.1.2')
     testImplementation 'org.springframework.modulith:spring-modulith-core'
     testImplementation 'org.springframework.modulith:spring-modulith-docs'
 }
