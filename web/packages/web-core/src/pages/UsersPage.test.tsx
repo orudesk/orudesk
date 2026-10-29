@@ -96,6 +96,40 @@ describe('Users page', () => {
     expect(searched.map((r) => new URL(r.url).searchParams.get('q'))).toEqual(['nobody']);
   });
 
+  it('disables a user, and the list shows them disabled; there is no button on your own row', async () => {
+    let anna = user('anna@orudesk.org');
+    const api = openUsersPage({
+      'GET /api/v1/users': () => json({ items: [anna, { ...admin }], nextCursor: null }),
+      'POST /api/v1/users/anna/disable': () => {
+        anna = { ...anna, enabled: false };
+        return new Response(null, { status: 204 });
+      },
+    });
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Disable anna@orudesk.org' }));
+
+    const row = (await screen.findByRole('button', { name: 'Enable anna@orudesk.org' })).closest(
+      'tr',
+    )!;
+    expect(within(row).getByText('Disabled')).toBeInTheDocument();
+    expect(api.calls('POST /api/v1/users/anna/disable')).toBe(1);
+    expect(
+      screen.queryByRole('button', { name: 'Disable ck@orudesk.org' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows why the API refused to disable someone', async () => {
+    openUsersPage({
+      'GET /api/v1/users': () => json({ items: [user('anna@orudesk.org')], nextCursor: null }),
+      'POST /api/v1/users/anna/disable': () =>
+        json({ title: 'Conflict', detail: 'anna is the last admin' }, 409),
+    });
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Disable anna@orudesk.org' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Anna is the last admin.');
+  });
+
   it('tells a user who is not an admin that the page is not for them', async () => {
     openUsersPage({
       'GET /api/v1/users/me': () => json({ ...admin, roles: ['USER'], grants: [{ role: 'USER' }] }),

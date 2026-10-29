@@ -25,6 +25,10 @@ export const coreModule: OrudeskModule = {
       lazy: async () => ({ Component: (await import('./pages/PersonPage')).PersonPage }),
     },
     {
+      path: '/people/:personId/edit',
+      lazy: async () => ({ Component: (await import('./pages/EditPersonPage')).EditPersonPage }),
+    },
+    {
       path: '/users',
       lazy: async () => ({ Component: (await import('./pages/UsersPage')).UsersPage }),
     },

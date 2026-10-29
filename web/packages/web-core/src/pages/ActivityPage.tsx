@@ -1,4 +1,5 @@
-import { Anchor, Button, Group, Loader, Stack, Table, Text, Title } from '@mantine/core';
+import { Anchor, Button, Group, List, Loader, Stack, Table, Text, Title } from '@mantine/core';
+import type { Schemas } from '@orudesk/api-client';
 import { Link, useSearchParams } from 'react-router';
 import { usePageTitle } from '../layout/usePageTitle';
 import { useAuditEntries } from '../queries/audit';
@@ -49,6 +50,7 @@ export function ActivityPage() {
                   <Table.Td>{entry.actorEmail ?? 'System'}</Table.Td>
                   <Table.Td>
                     <Text size="sm">{entry.summary}</Text>
+                    {entry.changes.length > 0 && <Changes changes={entry.changes} />}
                     {entry.requestId && (
                       <Text size="xs" c="dimmed">
                         Request {entry.requestId}
@@ -74,6 +76,24 @@ export function ActivityPage() {
         </Group>
       )}
     </Stack>
+  );
+}
+
+/**
+ * What an edit changed, field by field (Day 47): "phone: +91 98450 12345 → +91 98450 99999". A hidden value
+ * (a PAN) shows only that it changed: the log never had the value to show.
+ */
+function Changes({ changes }: { changes: Schemas['FieldChange'][] }) {
+  return (
+    <List size="xs" c="dimmed" spacing={2} mt={4} aria-label="Changes">
+      {changes.map((change) => (
+        <List.Item key={change.field}>
+          {change.valuesHidden
+            ? `${change.field}: changed (value not recorded)`
+            : `${change.field}: ${change.before ?? '—'} → ${change.after ?? '—'}`}
+        </List.Item>
+      ))}
+    </List>
   );
 }
 

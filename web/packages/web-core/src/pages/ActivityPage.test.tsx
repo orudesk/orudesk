@@ -26,6 +26,7 @@ function entry(id: string, summary: string, extra: Record<string, unknown> = {})
     subjectId: 'p-asha',
     summary,
     requestId: null,
+    changes: [],
     ...extra,
   };
 }
@@ -95,5 +96,26 @@ describe('Activity', () => {
     expect(screen.getByRole('heading', { name: 'History' })).toBeInTheDocument();
     const request = api.requests.find((r) => new URL(r.url).pathname === '/api/v1/audit-entries');
     expect(new URL(request!.url).searchParams.get('subjectId')).toBe('p-asha');
+  });
+
+  it('lists what an edit changed, without the values that were never recorded', async () => {
+    openAt('/activity', {
+      'GET /api/v1/audit-entries': () =>
+        json({
+          items: [
+            entry('a1', 'Changed phone, pan of donor Meera Iyer', {
+              changes: [
+                { field: 'phone', before: '+91 98450 12345', after: null, valuesHidden: false },
+                { field: 'pan', before: null, after: null, valuesHidden: true },
+              ],
+            }),
+          ],
+          nextCursor: null,
+        }),
+    });
+
+    const changes = await screen.findByRole('list', { name: 'Changes' });
+    expect(within(changes).getByText('phone: +91 98450 12345 → —')).toBeInTheDocument();
+    expect(within(changes).getByText('pan: changed (value not recorded)')).toBeInTheDocument();
   });
 });

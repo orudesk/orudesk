@@ -17,6 +17,8 @@ export type { Services } from './services';
 export { createServices } from './services';
 export { useMe } from './queries/me';
 export { problemMessage } from './queries/problem';
+export { EditConflictError, saveError, ValidationError } from './queries/formErrors';
+export { EditConflictAlert } from './forms/EditConflictAlert';
 export { usePageTitle } from './layout/usePageTitle';
 export { useCurrentUnit } from './units/useCurrentUnit';
 export { useCurrentUnitAccess } from './queries/orgUnits';

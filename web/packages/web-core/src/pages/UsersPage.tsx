@@ -1,4 +1,5 @@
 import {
+  Alert,
   Badge,
   Button,
   Group,
@@ -16,7 +17,8 @@ import type { Schemas } from '@orudesk/api-client';
 import { useMemo, useState } from 'react';
 import { usePageTitle } from '../layout/usePageTitle';
 import { useOrgTree } from '../queries/orgUnits';
-import { useUsers } from '../queries/users';
+import { useMe } from '../queries/me';
+import { useSetUserEnabled, useUsers } from '../queries/users';
 import { RolesDialog } from '../users/RolesDialog';
 import { flatten } from '../units/accessibleUnits';
 
@@ -30,6 +32,8 @@ export function UsersPage() {
   const unitName = useUnitNames();
   // The id, not the user: after a change the list is refetched, and the dialog shows the fresh grants
   const [editing, setEditing] = useState<string | null>(null);
+  const me = useMe();
+  const setEnabled = useSetUserEnabled();
 
   const rows = users.data?.pages.flatMap((page) => page.items) ?? [];
 
@@ -43,6 +47,18 @@ export function UsersPage() {
         onChange={(event) => setSearch(event.currentTarget.value)}
         maw={360}
       />
+
+      {setEnabled.isError && (
+        <Alert
+          color="red"
+          role="alert"
+          title="Not changed"
+          withCloseButton
+          onClose={setEnabled.reset}
+        >
+          {setEnabled.error.message}
+        </Alert>
+      )}
 
       {users.isPending && <Loader size="sm" aria-label="Loading" />}
       {users.isError && <Text role="alert">{users.error.message}</Text>}
@@ -88,15 +104,32 @@ export function UsersPage() {
                       ))}
                     </Group>
                   </Table.Td>
-                  <Table.Td ta="right">
-                    <Button
-                      variant="subtle"
-                      size="xs"
-                      aria-label={`Manage roles of ${user.email}`}
-                      onClick={() => setEditing(user.id)}
-                    >
-                      Manage roles
-                    </Button>
+                  <Table.Td>
+                    <Group gap={4} justify="flex-end" wrap="nowrap">
+                      <Button
+                        variant="subtle"
+                        size="xs"
+                        aria-label={`Manage roles of ${user.email}`}
+                        onClick={() => setEditing(user.id)}
+                      >
+                        Manage roles
+                      </Button>
+                      {/* Not on your own row: the API refuses it anyway, and the button would only tempt */}
+                      {user.id !== me.data?.id && (
+                        <Button
+                          variant="subtle"
+                          size="xs"
+                          color={user.enabled ? 'red' : 'teal'}
+                          aria-label={`${user.enabled ? 'Disable' : 'Enable'} ${user.email}`}
+                          loading={setEnabled.isPending && setEnabled.variables.userId === user.id}
+                          onClick={() =>
+                            setEnabled.mutate({ userId: user.id, enabled: !user.enabled })
+                          }
+                        >
+                          {user.enabled ? 'Disable' : 'Enable'}
+                        </Button>
+                      )}
+                    </Group>
                   </Table.Td>
                 </Table.Tr>
               ))}

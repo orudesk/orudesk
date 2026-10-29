@@ -1,3 +1,4 @@
+import type { Schemas } from '@orudesk/api-client';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -14,13 +15,14 @@ const admin = {
   grants: [{ role: 'ADMIN' }],
   enabled: true,
 };
-const asha = {
+const asha: Schemas['PersonDetails'] = {
   id: 'p-asha',
   firstName: 'Asha',
   lastName: 'Kumar',
   dateOfBirth: '2014-03-09',
   phone: '+91 98765 43210',
   email: null,
+  version: 0,
 };
 
 function openAt(path: string, handlers: Parameters<typeof fakeApi>[0]) {
@@ -77,6 +79,7 @@ describe('People', () => {
           dateOfBirth: null,
           phone: null,
           email: null,
+          version: 0,
         }),
     });
 
@@ -122,5 +125,64 @@ describe('People', () => {
       'must be a well-formed email address',
     );
     expect(window.location.pathname).toBe('/people/new');
+  });
+
+  it('edits a person, sending the version it read, and goes back to their page', async () => {
+    let saved = asha;
+    const api = openAt('/people/p-asha/edit', {
+      'GET /api/v1/people/p-asha': () => json(saved),
+      'PUT /api/v1/people/p-asha': async (request) => {
+        const body = (await request.json()) as typeof asha;
+        saved = { ...asha, ...body, version: 1 };
+        return json(saved);
+      },
+    });
+
+    const phone = await screen.findByLabelText(/Phone/);
+    expect(phone).toHaveValue('+91 98765 43210');
+    await userEvent.clear(phone);
+    await userEvent.type(phone, '+91 90000 11111');
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(await screen.findByRole('heading', { name: 'Asha Kumar' })).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/people/p-asha');
+    expect(screen.getByText('+91 90000 11111')).toBeInTheDocument();
+    const sent = api.requests.find((r) => r.method === 'PUT')!;
+    expect(await sent.json()).toEqual({
+      version: 0,
+      firstName: 'Asha',
+      lastName: 'Kumar',
+      dateOfBirth: '2014-03-09',
+      phone: '+91 90000 11111',
+      email: null,
+    });
+  });
+
+  it("refuses to overwrite a colleague's change, and reloads it on request", async () => {
+    let stored = asha;
+    openAt('/people/p-asha/edit', {
+      'GET /api/v1/people/p-asha': () => json(stored),
+      'PUT /api/v1/people/p-asha': () =>
+        json(
+          { title: 'Edit conflict', detail: 'person p-asha was changed', currentVersion: 1 },
+          409,
+        ),
+    });
+    const phone = await screen.findByLabelText(/Phone/);
+    // ...meanwhile a colleague saves a new email
+    stored = { ...asha, email: 'asha@example.org', version: 1 };
+
+    await userEvent.type(phone, '9');
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Changed by someone else');
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Reload' }));
+
+    expect(await screen.findByDisplayValue('asha@example.org')).toBeInTheDocument();
+    expect(screen.getByLabelText(/Phone/)).toHaveValue('+91 98765 43210'); // the form was redrawn
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled();
   });
 });

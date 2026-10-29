@@ -3,7 +3,8 @@ import type { Schemas } from '@orudesk/api-client';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { usePageTitle } from '../layout/usePageTitle';
-import { useRegisterPerson, ValidationError } from '../queries/people';
+import { ValidationError } from '../queries/formErrors';
+import { useRegisterPerson } from '../queries/people';
 
 /**
  * Add a person. The server checks the input (it has to anyway: other clients exist), and its message for each

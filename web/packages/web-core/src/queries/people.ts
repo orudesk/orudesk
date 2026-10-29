@@ -1,7 +1,7 @@
 import type { Schemas } from '@orudesk/api-client';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useApi } from '../ServicesContext';
-import { problemMessage } from './problem';
+import { saveError } from './formErrors';
 
 export const PEOPLE_PAGE_SIZE = 20;
 
@@ -44,19 +44,6 @@ export function usePerson(personId: string) {
   });
 }
 
-/**
- * The API refused the form: `fields` has a message per field name ("firstName": "must not be blank"), straight
- * from the server's validation, so the browser never has to repeat the rules.
- */
-export class ValidationError extends Error {
-  constructor(
-    message: string,
-    readonly fields: Record<string, string>,
-  ) {
-    super(message);
-  }
-}
-
 export function useRegisterPerson() {
   const api = useApi();
   const queryClient = useQueryClient();
@@ -64,12 +51,32 @@ export function useRegisterPerson() {
     mutationFn: async (person: Schemas['RegisterPersonRequest']) => {
       const { data, error, response } = await api.POST('/api/v1/people', { body: person });
       if (data) return data.id;
-      if (response.status === 400) {
-        const fields = (error as { errors?: Record<string, string> } | undefined)?.errors ?? {};
-        throw new ValidationError(problemMessage(error, 'Some fields are invalid.'), fields);
-      }
-      throw new Error(problemMessage(error, 'The person was not saved.'));
+      throw saveError(response, error, 'The person was not saved.');
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['people', 'list'] }),
+  });
+}
+
+/**
+ * Saves the whole edit form (PUT), with the version it was read at. Throws EditConflictError when someone else
+ * saved in between, and ValidationError for fields the server refused.
+ */
+export function useEditPerson(personId: string) {
+  const api = useApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (person: Schemas['EditPersonRequest']) => {
+      const { data, error, response } = await api.PUT('/api/v1/people/{personId}', {
+        params: { path: { personId } },
+        body: person,
+      });
+      if (data) return data;
+      throw saveError(response, error, 'The changes were not saved.');
+    },
+    onSuccess: (person) => {
+      queryClient.setQueryData(['people', 'one', personId], person); // the answer is the saved person
+      void queryClient.invalidateQueries({ queryKey: ['people', 'list'] });
+      void queryClient.invalidateQueries({ queryKey: ['audit'] });
+    },
   });
 }

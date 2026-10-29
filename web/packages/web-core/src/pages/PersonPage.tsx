@@ -27,9 +27,14 @@ export function PersonPage() {
         <>
           <Group justify="space-between" maw={640}>
             <Title order={1}>{name}</Title>
-            <Anchor component={Link} to={`/activity?subject=${person.data.id}`} size="sm">
-              History
-            </Anchor>
+            <Group gap="md">
+              <Anchor component={Link} to={`/people/${person.data.id}/edit`} size="sm">
+                Edit
+              </Anchor>
+              <Anchor component={Link} to={`/activity?subject=${person.data.id}`} size="sm">
+                History
+              </Anchor>
+            </Group>
           </Group>
           <Card withBorder maw={640}>
             <SimpleGrid cols={{ base: 1, xs: 2 }} spacing="md" component="dl" m={0}>
