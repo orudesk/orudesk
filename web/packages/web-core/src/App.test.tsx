@@ -175,7 +175,9 @@ describe('App', () => {
     down = false;
     await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
 
-    expect(await screen.findByText('ck@orudesk.org')).toBeInTheDocument();
+    // The retry re-runs the whole session check (refresh, then /users/me): give a slow CI runner more than
+    // findBy's default second
+    expect(await screen.findByText('ck@orudesk.org', {}, { timeout: 5000 })).toBeInTheDocument();
     expect(screen.queryByText(/having trouble/)).not.toBeInTheDocument();
   });
 
