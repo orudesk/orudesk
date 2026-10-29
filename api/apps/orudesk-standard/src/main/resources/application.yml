@@ -62,6 +62,10 @@ orudesk:
     # How long a password reset link works (Day 53). Short: the link is as good as the password while it lives.
     password-reset:
       ttl: ${ORUDESK_PASSWORD_RESET_TTL:30m}
+    # Two-factor sign-in (Day 67): the key that encrypts authenticator app secrets, 32 bytes in base64
+    # (openssl rand -base64 32). Empty: two-factor sign-in is not offered. Keep it as safe as the database backups.
+    mfa:
+      key: ${ORUDESK_MFA_KEY:}
     # Optional: the first ADMIN, created at startup if both are set (see FirstAdminInitializer).
     first-admin:
       email: ${ORUDESK_ADMIN_EMAIL:}

@@ -11,6 +11,10 @@ import com.orudesk.orudesk.identity.domain.RoleChangeNotAllowedException;
 import com.orudesk.orudesk.identity.domain.SelfLockoutException;
 import com.orudesk.orudesk.identity.domain.SessionNotFoundException;
 import com.orudesk.orudesk.identity.domain.TooManyLoginAttemptsException;
+import com.orudesk.orudesk.identity.domain.TwoFactorAlreadyEnabledException;
+import com.orudesk.orudesk.identity.domain.TwoFactorNotAvailableException;
+import com.orudesk.orudesk.identity.domain.WrongPasswordException;
+import com.orudesk.orudesk.identity.domain.WrongTwoFactorCodeException;
 import com.orudesk.orudesk.identity.domain.UnknownRoleException;
 import com.orudesk.orudesk.identity.domain.UserNotFoundException;
 import org.springframework.http.HttpHeaders;
@@ -19,6 +23,8 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.Map;
 
 /** Turns identity's business exceptions into RFC 9457 "problem detail" JSON responses. */
 @RestControllerAdvice
@@ -37,6 +43,30 @@ class IdentityExceptionHandler {
     @ExceptionHandler(SessionNotFoundException.class)
     ProblemDetail sessionNotFound(SessionNotFoundException e) {
         return problem(HttpStatus.NOT_FOUND, "Session not found", e.getMessage());
+    }
+
+    /**
+     * A wrong current password or code is a field error (400), like any form mistake: the user is logged in, and a
+     * 401 would make the web app think their session ended (Day 67).
+     */
+    @ExceptionHandler(WrongPasswordException.class)
+    ProblemDetail wrongPassword(WrongPasswordException e) {
+        return fieldError("password", "That's not your current password");
+    }
+
+    @ExceptionHandler(WrongTwoFactorCodeException.class)
+    ProblemDetail wrongCode(WrongTwoFactorCodeException e) {
+        return fieldError("code", "That code isn't right, or was already used. Try the newest one");
+    }
+
+    @ExceptionHandler(TwoFactorAlreadyEnabledException.class)
+    ProblemDetail twoFactorOn(TwoFactorAlreadyEnabledException e) {
+        return problem(HttpStatus.CONFLICT, "Two-factor sign-in already on", e.getMessage());
+    }
+
+    @ExceptionHandler(TwoFactorNotAvailableException.class)
+    ProblemDetail twoFactorUnavailable(TwoFactorNotAvailableException e) {
+        return problem(HttpStatus.SERVICE_UNAVAILABLE, "Two-factor sign-in not available", e.getMessage());
     }
 
     @ExceptionHandler(UnknownRoleException.class)
@@ -96,6 +126,14 @@ class IdentityExceptionHandler {
     private static ProblemDetail problem(HttpStatus status, String title, String detail) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
         problem.setTitle(title);
+        return problem;
+    }
+
+    /** The same shape as a @Valid failure, so clients show it next to the field. */
+    private static ProblemDetail fieldError(String field, String message) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "some fields are invalid");
+        problem.setTitle("Validation failed");
+        problem.setProperty("errors", Map.of(field, message));
         return problem;
     }
 }

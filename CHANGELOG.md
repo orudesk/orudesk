@@ -8,6 +8,12 @@ Every release of the Orudesk core, newest first. The format follows
 
 ### Added
 
+- Two-factor sign-in with an authenticator app (TOTP, RFC 6238), set up from `/api/v1/users/me/two-factor`:
+  `POST /setup` (current password) returns a secret and an `otpauth://` link for a QR code, `POST /confirm` with the
+  app's first code turns it on and returns ten one-time recovery codes, `POST /recovery-codes` replaces them and
+  `POST /disable` turns it off; both changes are audited. Secrets are stored encrypted (AES-256-GCM) with the key
+  in `ORUDESK_MFA_KEY` (32 bytes, base64); without it two-factor sign-in is unavailable (503). Recovery codes are
+  stored as hashes.
 - Sessions: each login is a session that lives through every token refresh. `GET /api/v1/users/me/sessions` lists
   where the user is signed in (device, address, when), `DELETE /api/v1/users/me/sessions/{id}` signs one out and
   `POST /api/v1/users/me/sessions/end-others` signs out everywhere else; both are audited. Access tokens name their

@@ -624,6 +624,134 @@
         "tags" : [ "Users" ]
       }
     },
+    "/api/v1/users/me/two-factor" : {
+      "get" : {
+        "operationId" : "getMyTwoFactor",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TwoFactorStatus"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Whether two-factor sign-in is on, and how many recovery codes are left",
+        "tags" : [ "Users" ]
+      }
+    },
+    "/api/v1/users/me/two-factor/confirm" : {
+      "post" : {
+        "operationId" : "confirmTwoFactorSetup",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CodeRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RecoveryCodesResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Step 2: the app's first code turns two-factor sign-in on; returns the recovery codes, once",
+        "tags" : [ "Users" ]
+      }
+    },
+    "/api/v1/users/me/two-factor/disable" : {
+      "post" : {
+        "operationId" : "disableTwoFactor",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PasswordRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "Off: the password alone signs in again"
+          }
+        },
+        "summary" : "Turn two-factor sign-in off",
+        "tags" : [ "Users" ]
+      }
+    },
+    "/api/v1/users/me/two-factor/recovery-codes" : {
+      "post" : {
+        "operationId" : "newRecoveryCodes",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PasswordRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RecoveryCodesResponse"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "New recovery codes; the old ones stop working",
+        "tags" : [ "Users" ]
+      }
+    },
+    "/api/v1/users/me/two-factor/setup" : {
+      "post" : {
+        "operationId" : "beginTwoFactorSetup",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PasswordRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TotpSetup"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Step 1: a new secret for an authenticator app",
+        "tags" : [ "Users" ]
+      }
+    },
     "/api/v1/users/{userId}/disable" : {
       "post" : {
         "operationId" : "disableUser",
@@ -835,6 +963,17 @@
         },
         "required" : [ "items" ]
       },
+      "CodeRequest" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "string",
+            "maxLength" : 20,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "code" ]
+      },
       "ConfirmPasswordResetRequest" : {
         "type" : "object",
         "properties" : {
@@ -993,6 +1132,17 @@
         },
         "required" : [ "children", "code", "id", "name", "type" ]
       },
+      "PasswordRequest" : {
+        "type" : "object",
+        "properties" : {
+          "password" : {
+            "type" : "string",
+            "maxLength" : 72,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "password" ]
+      },
       "PasswordResetRequest" : {
         "type" : "object",
         "properties" : {
@@ -1049,6 +1199,18 @@
           }
         },
         "required" : [ "items" ]
+      },
+      "RecoveryCodesResponse" : {
+        "type" : "object",
+        "properties" : {
+          "recoveryCodes" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        },
+        "required" : [ "recoveryCodes" ]
       },
       "RefreshTokenRequest" : {
         "type" : "object",
@@ -1161,6 +1323,38 @@
           }
         },
         "required" : [ "accessToken", "expiresIn", "tokenType" ]
+      },
+      "TotpSetup" : {
+        "type" : "object",
+        "properties" : {
+          "otpauthUri" : {
+            "type" : "string"
+          },
+          "secret" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "otpauthUri", "secret" ]
+      },
+      "TwoFactorStatus" : {
+        "type" : "object",
+        "properties" : {
+          "available" : {
+            "type" : "boolean"
+          },
+          "enabled" : {
+            "type" : "boolean"
+          },
+          "enabledAt" : {
+            "type" : [ "string", "null" ],
+            "format" : "date-time"
+          },
+          "recoveryCodesLeft" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        },
+        "required" : [ "available", "enabled", "recoveryCodesLeft" ]
       },
       "UnitAccess" : {
         "type" : "object",

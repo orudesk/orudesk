@@ -316,6 +316,91 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/users/me/two-factor': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Whether two-factor sign-in is on, and how many recovery codes are left */
+    get: operations['getMyTwoFactor'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/users/me/two-factor/confirm': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Step 2: the app's first code turns two-factor sign-in on; returns the recovery codes, once */
+    post: operations['confirmTwoFactorSetup'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/users/me/two-factor/disable': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Turn two-factor sign-in off */
+    post: operations['disableTwoFactor'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/users/me/two-factor/recovery-codes': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** New recovery codes; the old ones stop working */
+    post: operations['newRecoveryCodes'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/users/me/two-factor/setup': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Step 1: a new secret for an authenticator app */
+    post: operations['beginTwoFactorSetup'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/users/{userId}/disable': {
     parameters: {
       query?: never;
@@ -424,6 +509,9 @@ export interface components {
       items: components['schemas']['AuditEntryDetails'][];
       nextCursor?: string | null;
     };
+    CodeRequest: {
+      code: string;
+    };
     ConfirmPasswordResetRequest: {
       newPassword: string;
       token: string;
@@ -474,6 +562,9 @@ export interface components {
       name: string;
       type: string;
     };
+    PasswordRequest: {
+      password: string;
+    };
     PasswordResetRequest: {
       /** Format: email */
       email: string;
@@ -493,6 +584,9 @@ export interface components {
     PersonPage: {
       items: components['schemas']['PersonDetails'][];
       nextCursor?: string | null;
+    };
+    RecoveryCodesResponse: {
+      recoveryCodes: string[];
     };
     RefreshTokenRequest: {
       refreshToken: string;
@@ -530,6 +624,18 @@ export interface components {
       expiresIn: number;
       refreshToken?: string | null;
       tokenType: string;
+    };
+    TotpSetup: {
+      otpauthUri: string;
+      secret: string;
+    };
+    TwoFactorStatus: {
+      available: boolean;
+      enabled: boolean;
+      /** Format: date-time */
+      enabledAt?: string | null;
+      /** Format: int32 */
+      recoveryCodesLeft: number;
     };
     UnitAccess: {
       code: string;
@@ -1044,6 +1150,120 @@ export interface operations {
           [name: string]: unknown;
         };
         content?: never;
+      };
+    };
+  };
+  getMyTwoFactor: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TwoFactorStatus'];
+        };
+      };
+    };
+  };
+  confirmTwoFactorSetup: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['CodeRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['RecoveryCodesResponse'];
+        };
+      };
+    };
+  };
+  disableTwoFactor: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PasswordRequest'];
+      };
+    };
+    responses: {
+      /** @description Off: the password alone signs in again */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  newRecoveryCodes: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PasswordRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['RecoveryCodesResponse'];
+        };
+      };
+    };
+  };
+  beginTwoFactorSetup: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PasswordRequest'];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['TotpSetup'];
+        };
       };
     };
   };
