@@ -45,6 +45,9 @@ class AuthControllerTest {
     @MockitoBean
     private LogoutUseCase logout;
 
+    @MockitoBean
+    private PasswordResetUseCase passwordReset;
+
     @Test
     void registersAUserAndReturns201WithItsLocation() throws Exception {
         UUID id = UUID.fromString("11111111-1111-1111-1111-111111111111");

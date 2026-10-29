@@ -72,6 +72,40 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/auth/password-reset': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Email a password reset link, if the email has an account */
+    post: operations['requestPasswordReset'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/api/v1/auth/password-reset/confirm': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Set a new password with the token from the reset email */
+    post: operations['confirmPasswordReset'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/auth/refresh': {
     parameters: {
       query?: never;
@@ -328,6 +362,10 @@ export interface components {
       items: components['schemas']['AuditEntryDetails'][];
       nextCursor?: string | null;
     };
+    ConfirmPasswordResetRequest: {
+      newPassword: string;
+      token: string;
+    };
     CreateOrgUnitRequest: {
       code: string;
       name: string;
@@ -373,6 +411,10 @@ export interface components {
       id: string;
       name: string;
       type: string;
+    };
+    PasswordResetRequest: {
+      /** Format: email */
+      email: string;
     };
     PersonDetails: {
       /** Format: date */
@@ -555,6 +597,50 @@ export interface operations {
     };
     responses: {
       /** @description Logged out */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  requestPasswordReset: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['PasswordResetRequest'];
+      };
+    };
+    responses: {
+      /** @description Accepted; a link is sent if the email has an account */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  confirmPasswordReset: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ConfirmPasswordResetRequest'];
+      };
+    };
+    responses: {
+      /** @description Password changed; every session of the user has ended */
       204: {
         headers: {
           [name: string]: unknown;

@@ -30,6 +30,11 @@ class InMemoryRefreshTokenStore implements RefreshTokenStore {
         tokens.remove(refreshToken);
     }
 
+    @Override
+    public void revokeAll(UserId userId) {
+        tokens.values().removeIf(userId::equals);
+    }
+
     int size() {
         return tokens.size();
     }

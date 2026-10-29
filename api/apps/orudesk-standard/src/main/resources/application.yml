@@ -48,6 +48,9 @@ orudesk:
   identity:
     # Until the tenant comes from the logged-in user (step 11), new users join this one: the demo tenant from V4.
     default-tenant-id: ${ORUDESK_DEFAULT_TENANT_ID:00000000-0000-0000-0000-000000000001}
+    # How long a password reset link works (Day 53). Short: the link is as good as the password while it lives.
+    password-reset:
+      ttl: ${ORUDESK_PASSWORD_RESET_TTL:30m}
     # Optional: the first ADMIN, created at startup if both are set (see FirstAdminInitializer).
     first-admin:
       email: ${ORUDESK_ADMIN_EMAIL:}

@@ -4,6 +4,7 @@ import com.orudesk.orudesk.identity.application.port.in.AuthTokens;
 import com.orudesk.orudesk.identity.application.port.in.LoginCommand;
 import com.orudesk.orudesk.identity.application.port.in.LoginUseCase;
 import com.orudesk.orudesk.identity.application.port.in.LogoutUseCase;
+import com.orudesk.orudesk.identity.application.port.in.PasswordResetUseCase;
 import com.orudesk.orudesk.identity.application.port.in.RefreshTokensUseCase;
 import com.orudesk.orudesk.identity.application.port.in.RegisterUserCommand;
 import com.orudesk.orudesk.identity.application.port.in.RegisterUserUseCase;
@@ -47,16 +48,19 @@ class AuthController {
     private final LoginUseCase login;
     private final RefreshTokensUseCase refreshTokens;
     private final LogoutUseCase logout;
+    private final PasswordResetUseCase passwordReset;
     private final RefreshTokenCookie cookie;
     private final TenantId defaultTenant;
 
     AuthController(RegisterUserUseCase registerUser, LoginUseCase login,
-                   RefreshTokensUseCase refreshTokens, LogoutUseCase logout, RefreshTokenCookie cookie,
+                   RefreshTokensUseCase refreshTokens, LogoutUseCase logout, PasswordResetUseCase passwordReset,
+                   RefreshTokenCookie cookie,
                    @Value("${orudesk.identity.default-tenant-id}") UUID defaultTenantId) {
         this.registerUser = registerUser;
         this.login = login;
         this.refreshTokens = refreshTokens;
         this.logout = logout;
+        this.passwordReset = passwordReset;
         this.cookie = cookie;
         this.defaultTenant = new TenantId(defaultTenantId);
     }
@@ -120,6 +124,26 @@ class AuthController {
             response.header(HttpHeaders.SET_COOKIE, cookie.clear().toString());
         }
         return response.build();
+    }
+
+    /**
+     * Always 202, whether or not the email has an account: otherwise this endpoint would tell anyone which emails
+     * are registered. "Accepted" also says the truth: the email goes out later.
+     */
+    @PostMapping("/password-reset")
+    @Operation(operationId = "requestPasswordReset", summary = "Email a password reset link, if the email has an account")
+    @ApiResponse(responseCode = "202", description = "Accepted; a link is sent if the email has an account")
+    ResponseEntity<Void> requestPasswordReset(@Valid @RequestBody PasswordResetRequest request) {
+        passwordReset.requestReset(new Email(request.email()));
+        return ResponseEntity.accepted().build();
+    }
+
+    @PostMapping("/password-reset/confirm")
+    @Operation(operationId = "confirmPasswordReset", summary = "Set a new password with the token from the reset email")
+    @ApiResponse(responseCode = "204", description = "Password changed; every session of the user has ended")
+    ResponseEntity<Void> confirmPasswordReset(@Valid @RequestBody ConfirmPasswordResetRequest request) {
+        passwordReset.resetPassword(request.token(), request.newPassword());
+        return ResponseEntity.noContent().build();
     }
 
     private ResponseEntity<TokenResponse> tokens(AuthTokens tokens, @Nullable String transport) {

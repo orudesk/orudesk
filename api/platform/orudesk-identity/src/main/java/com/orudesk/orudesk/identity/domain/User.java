@@ -15,7 +15,7 @@ public class User {
     private final UserId id;
     private final TenantId tenantId;
     private final Email email;
-    private final PasswordHash passwordHash;
+    private PasswordHash passwordHash;
     private boolean enabled;
     private final Set<RoleGrant> grants;
 
@@ -82,6 +82,11 @@ public class User {
     /** Lets a disabled user log in again, with the roles they had. */
     public void enable() {
         enabled = true;
+    }
+
+    /** A new password, already hashed (Day 53). Who may change it, and how they prove it, is the use case's job. */
+    public void changePassword(PasswordHash newHash) {
+        this.passwordHash = Objects.requireNonNull(newHash, "passwordHash must not be null");
     }
 
     /** True if the user has the role everywhere in the tenant. Scoped roles are checked against the org tree. */

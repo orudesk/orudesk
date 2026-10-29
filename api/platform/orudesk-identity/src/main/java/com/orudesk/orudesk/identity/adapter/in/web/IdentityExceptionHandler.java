@@ -2,6 +2,7 @@ package com.orudesk.orudesk.identity.adapter.in.web;
 
 import com.orudesk.orudesk.identity.domain.EmailAlreadyRegisteredException;
 import com.orudesk.orudesk.identity.domain.InvalidCredentialsException;
+import com.orudesk.orudesk.identity.domain.InvalidPasswordResetTokenException;
 import com.orudesk.orudesk.identity.domain.InvalidRefreshTokenException;
 import com.orudesk.orudesk.identity.domain.MissingOrgUnitException;
 import com.orudesk.orudesk.identity.domain.OrgUnitCodeTakenException;
@@ -49,6 +50,11 @@ class IdentityExceptionHandler {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .header(HttpHeaders.RETRY_AFTER, Long.toString(seconds))
                 .body(problem(HttpStatus.TOO_MANY_REQUESTS, "Too many login attempts", e.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidPasswordResetTokenException.class)
+    ProblemDetail invalidResetToken(InvalidPasswordResetTokenException e) {
+        return problem(HttpStatus.BAD_REQUEST, "Invalid reset link", e.getMessage());
     }
 
     @ExceptionHandler(InvalidRefreshTokenException.class)

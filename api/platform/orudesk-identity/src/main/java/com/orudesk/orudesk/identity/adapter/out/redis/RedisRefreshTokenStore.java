@@ -14,17 +14,22 @@ import java.time.Duration;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
  * Keeps refresh tokens in Redis: key "orudesk:refresh:{sha256 of token}", value = user id,
  * expiring by itself after the refresh token lifetime.
  * Only a hash of the token is stored, so someone who reads Redis can't use the tokens.
+ *
+ * Day 53: each user also has a set "orudesk:refresh-by-user:{user id}" of their token keys, so all their sessions
+ * can end at once (after a password reset). The set expires with their newest token, so it never outlives them.
  */
 @Component
 class RedisRefreshTokenStore implements RefreshTokenStore {
 
     private static final String KEY_PREFIX = "orudesk:refresh:";
+    private static final String BY_USER_PREFIX = "orudesk:refresh-by-user:";
     private static final SecureRandom RANDOM = new SecureRandom();
 
     private final StringRedisTemplate redis;
@@ -41,7 +46,11 @@ class RedisRefreshTokenStore implements RefreshTokenStore {
         byte[] bytes = new byte[32];
         RANDOM.nextBytes(bytes);
         String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-        redis.opsForValue().set(key(token), userId.value().toString(), ttl);
+        String key = key(token);
+        redis.opsForValue().set(key, userId.value().toString(), ttl);
+        String byUser = BY_USER_PREFIX + userId.value();
+        redis.opsForSet().add(byUser, key);
+        redis.expire(byUser, ttl);
         return token;
     }
 
@@ -55,6 +64,16 @@ class RedisRefreshTokenStore implements RefreshTokenStore {
     @Override
     public void revoke(String refreshToken) {
         redis.delete(key(refreshToken));
+    }
+
+    @Override
+    public void revokeAll(UserId userId) {
+        String byUser = BY_USER_PREFIX + userId.value();
+        Set<String> keys = redis.opsForSet().members(byUser);
+        if (keys != null && !keys.isEmpty()) {
+            redis.delete(keys);   // keys already used or expired are simply not there: deleting them is harmless
+        }
+        redis.delete(byUser);
     }
 
     private static String key(String token) {

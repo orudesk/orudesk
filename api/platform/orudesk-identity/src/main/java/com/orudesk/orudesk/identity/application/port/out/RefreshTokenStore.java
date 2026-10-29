@@ -13,4 +13,7 @@ public interface RefreshTokenStore {
     Optional<UserId> consume(String refreshToken);
 
     void revoke(String refreshToken);
+
+    /** Ends every session of this user: none of their refresh tokens works any more (Day 53). */
+    void revokeAll(UserId userId);
 }
