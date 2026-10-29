@@ -1,5 +1,7 @@
 package com.orudesk.orudesk.party.adapter.in.web;
 
+import com.orudesk.orudesk.party.application.port.in.EditPersonCommand;
+import com.orudesk.orudesk.party.application.port.in.EditPersonUseCase;
 import com.orudesk.orudesk.party.application.port.in.GetPersonQuery;
 import com.orudesk.orudesk.party.application.port.in.PeopleSearch;
 import com.orudesk.orudesk.party.application.port.in.PersonDetails;
@@ -9,6 +11,7 @@ import com.orudesk.orudesk.party.application.port.in.RegisterPersonUseCase;
 import com.orudesk.orudesk.party.application.port.in.SearchPeopleQuery;
 import com.orudesk.orudesk.party.domain.PersonId;
 import com.orudesk.orudesk.party.domain.PersonNotFoundException;
+import com.orudesk.orudesk.shared.EditConflictException;
 import com.orudesk.orudesk.shared.adapter.in.security.SecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +32,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -45,6 +49,9 @@ class PersonControllerTest {
 
     @MockitoBean
     private RegisterPersonUseCase registerPerson;
+
+    @MockitoBean
+    private EditPersonUseCase editPerson;
 
     @MockitoBean
     private GetPersonQuery getPerson;
@@ -83,7 +90,7 @@ class PersonControllerTest {
     @Test
     void returnsAPerson() throws Exception {
         given(getPerson.getPerson(PERSON_ID))
-                .willReturn(new PersonDetails(PERSON_ID, "Asha", "Rao", LocalDate.of(1990, 4, 23), null, null));
+                .willReturn(new PersonDetails(PERSON_ID, "Asha", "Rao", LocalDate.of(1990, 4, 23), null, null, 0));
 
         mockMvc.perform(get("/api/v1/people/{id}", PERSON_ID))
                 .andExpect(status().isOk())
@@ -103,7 +110,7 @@ class PersonControllerTest {
     @Test
     void searchesWithDefaultsAndReturnsThePageAndItsCursor() throws Exception {
         given(searchPeople.search(new PeopleSearch("asha", null, 20))).willReturn(new PersonPage(
-                List.of(new PersonDetails(PERSON_ID, "Asha", "Rao", null, null, null)), "bmV4dA"));
+                List.of(new PersonDetails(PERSON_ID, "Asha", "Rao", null, null, null, 0)), "bmV4dA"));
 
         mockMvc.perform(get("/api/v1/people").param("q", "asha"))
                 .andExpect(status().isOk())
@@ -118,6 +125,48 @@ class PersonControllerTest {
                 .andExpect(jsonPath("$.detail").value("size must be between 1 and 100"));
 
         verify(searchPeople, never()).search(any());
+    }
+
+    @Test
+    void editsAPersonAndReturnsItWithTheNewVersion() throws Exception {
+        given(editPerson.edit(new EditPersonCommand(PERSON_ID, 3, "Asha", "Rao", null, "+91 98450 11111", null)))
+                .willReturn(new PersonDetails(PERSON_ID, "Asha", "Rao", null, "+91 98450 11111", null, 4));
+
+        mockMvc.perform(put("/api/v1/people/{id}", PERSON_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"version": 3, "firstName": "Asha", "lastName": "Rao", "phone": "+91 98450 11111"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.version").value(4))
+                .andExpect(jsonPath("$.phone").value("+91 98450 11111"));
+    }
+
+    @Test
+    void anEditWithoutAVersionIs400() throws Exception {
+        mockMvc.perform(put("/api/v1/people/{id}", PERSON_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"firstName": "Asha", "lastName": "Rao"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.version").exists());
+
+        verify(editPerson, never()).edit(any());
+    }
+
+    @Test
+    void anEditOfAnOldVersionIs409WithTheCurrentVersion() throws Exception {
+        given(editPerson.edit(any())).willThrow(new EditConflictException("person", PERSON_ID, 3, 5));
+
+        mockMvc.perform(put("/api/v1/people/{id}", PERSON_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"version": 3, "firstName": "Asha", "lastName": "Rao"}
+                                """))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.title").value("Edit conflict"))
+                .andExpect(jsonPath("$.currentVersion").value(5));
     }
 
     @Test

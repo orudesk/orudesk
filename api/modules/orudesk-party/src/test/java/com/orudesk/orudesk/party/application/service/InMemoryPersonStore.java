@@ -6,6 +6,7 @@ import com.orudesk.orudesk.party.application.port.out.SavePersonPort;
 import com.orudesk.orudesk.party.application.port.out.SearchPeoplePort;
 import com.orudesk.orudesk.party.domain.Person;
 import com.orudesk.orudesk.party.domain.PersonId;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -27,6 +28,19 @@ class InMemoryPersonStore implements SavePersonPort, LoadPersonPort, SearchPeopl
     @Override
     public void save(Person person) {
         people.put(person.id(), person);
+    }
+
+    /** Like the database: the stored version must match, and the saved copy moves to the next one. */
+    @Override
+    public long update(Person person) {
+        Person stored = people.get(person.id());
+        if (stored == null || stored.version() != person.version()) {
+            throw new ObjectOptimisticLockingFailureException(Person.class, person.id().value());
+        }
+        long next = person.version() + 1;
+        people.put(person.id(), Person.restore(person.id(), person.name(), person.dateOfBirth().orElse(null),
+                person.phone().orElse(null), person.email().orElse(null), next));
+        return next;
     }
 
     @Override

@@ -26,6 +26,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -121,6 +122,49 @@ class PeopleIntegrationTest {
         mockMvc.perform(get("/api/v1/people").param("q", "t_st").header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items").isEmpty());
+    }
+
+    @Test
+    void twoAdminsEditTheSamePersonAndTheSecondIsToldToReload() throws Exception {
+        String token = login("test-demo-admin@orudesk.org");
+        String id = register(token);
+        mockMvc.perform(get("/api/v1/people/{id}", id).header("Authorization", "Bearer " + token))
+                .andExpect(jsonPath("$.version").value(0));
+
+        // Both opened the form at version 0. The first save wins and moves the person to version 1...
+        mockMvc.perform(put("/api/v1/people/{id}", id).header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"version": 0, "firstName": "Asha", "lastName": "Test-Rao", "phone": "+91 98450 11111"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.version").value(1))
+                .andExpect(jsonPath("$.dateOfBirth").value(nullValue()));   // PUT replaces: left out means cleared
+
+        // ...so the second, still at version 0, would undo the phone number. It's refused instead.
+        mockMvc.perform(put("/api/v1/people/{id}", id).header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"version": 0, "firstName": "Asha", "lastName": "Test-Rao", "email": "asha@example.org"}
+                                """))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.currentVersion").value(1));
+
+        assertThat(jdbc.queryForObject("SELECT phone FROM party_person WHERE id = ?", String.class, UUID.fromString(id)))
+                .isEqualTo("+91 98450 11111");
+        assertThat(jdbc.queryForObject("SELECT summary FROM audit_entry WHERE subject_id = ? AND action = 'party.person.edited'",
+                String.class, UUID.fromString(id)))
+                .isEqualTo("Changed dateOfBirth, phone of Asha Test-Rao");
+    }
+
+    @Test
+    void anotherTenantCannotEditThePerson() throws Exception {
+        String id = register(login("test-demo-admin@orudesk.org"));
+
+        mockMvc.perform(put("/api/v1/people/{id}", id).header("Authorization", "Bearer " + login("test-acme-admin@orudesk.org"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"version\": 0, \"firstName\": \"Mallory\", \"lastName\": \"Test-Rao\"}"))
+                .andExpect(status().isNotFound());
     }
 
     private String register(String token) throws Exception {

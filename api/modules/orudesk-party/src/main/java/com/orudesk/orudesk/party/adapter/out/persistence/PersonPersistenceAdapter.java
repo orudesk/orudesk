@@ -9,6 +9,7 @@ import com.orudesk.orudesk.party.domain.PersonId;
 import com.orudesk.orudesk.party.domain.PersonName;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +38,28 @@ class PersonPersistenceAdapter implements SavePersonPort, LoadPersonPort, Search
                 person.dateOfBirth().orElse(null),
                 person.phone().orElse(null),
                 person.email().orElse(null)));
+    }
+
+    @Override
+    @Transactional
+    public long update(Person person) {
+        PersonJpaEntity entity = people.findById(person.id().value())
+                .orElseThrow(() -> new IllegalStateException("updating a person that isn't there: " + person.id().value()));
+        // The row in this transaction must be the version the change was made on. (Usually it was loaded a moment
+        // ago by the same service call, so this only fails if it changed in between.)
+        if (entity.getVersion() != person.version()) {
+            throw new ObjectOptimisticLockingFailureException(PersonJpaEntity.class, person.id().value());
+        }
+        entity.changeDetails(
+                person.name().first(),
+                person.name().last(),
+                person.dateOfBirth().orElse(null),
+                person.phone().orElse(null),
+                person.email().orElse(null));
+        // Flush now, not at commit: the UPDATE ... WHERE version = ? runs here, so a lost race throws inside this
+        // call, and the version read below is the new one.
+        people.flush();
+        return entity.getVersion();
     }
 
     @Override
@@ -87,6 +110,7 @@ class PersonPersistenceAdapter implements SavePersonPort, LoadPersonPort, Search
                 new PersonName(entity.getFirstName(), entity.getLastName()),
                 entity.getDateOfBirth(),
                 entity.getPhone(),
-                entity.getEmail());
+                entity.getEmail(),
+                entity.getVersion());
     }
 }

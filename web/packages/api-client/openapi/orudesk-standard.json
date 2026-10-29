@@ -400,6 +400,43 @@
         },
         "summary" : "One person",
         "tags" : [ "People" ]
+      },
+      "put" : {
+        "description" : "Send the version you read. 409 if the person was changed since: reload and edit again.",
+        "operationId" : "editPerson",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "personId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/EditPersonRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PersonDetails"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "Change a person's details",
+        "tags" : [ "People" ]
       }
     },
     "/api/v1/roles" : {
@@ -657,6 +694,42 @@
         },
         "required" : [ "id" ]
       },
+      "EditPersonRequest" : {
+        "type" : "object",
+        "properties" : {
+          "dateOfBirth" : {
+            "type" : [ "string", "null" ],
+            "format" : "date"
+          },
+          "email" : {
+            "type" : [ "string", "null" ],
+            "format" : "email",
+            "maxLength" : 320,
+            "minLength" : 0
+          },
+          "firstName" : {
+            "type" : "string",
+            "maxLength" : 100,
+            "minLength" : 0
+          },
+          "lastName" : {
+            "type" : "string",
+            "maxLength" : 100,
+            "minLength" : 0
+          },
+          "phone" : {
+            "type" : [ "string", "null" ],
+            "maxLength" : 30,
+            "minLength" : 0
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int64",
+            "minimum" : 0
+          }
+        },
+        "required" : [ "firstName", "lastName", "version" ]
+      },
       "Grant" : {
         "type" : "object",
         "properties" : {
@@ -732,9 +805,13 @@
           },
           "phone" : {
             "type" : [ "string", "null" ]
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int64"
           }
         },
-        "required" : [ "firstName", "id", "lastName" ]
+        "required" : [ "firstName", "id", "lastName", "version" ]
       },
       "PersonPage" : {
         "type" : "object",

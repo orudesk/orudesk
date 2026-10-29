@@ -1,10 +1,13 @@
 package com.orudesk.orudesk.party.application.service;
 
+import com.orudesk.orudesk.party.application.port.in.EditPersonCommand;
 import com.orudesk.orudesk.party.application.port.in.PeopleSearch;
 import com.orudesk.orudesk.party.application.port.in.PersonDetails;
+import com.orudesk.orudesk.party.application.port.in.PersonEdited;
 import com.orudesk.orudesk.party.application.port.in.PersonPage;
 import com.orudesk.orudesk.party.application.port.in.RegisterPersonCommand;
 import com.orudesk.orudesk.party.domain.PersonNotFoundException;
+import com.orudesk.orudesk.shared.EditConflictException;
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
@@ -24,7 +27,8 @@ class PersonServiceTest {
     private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-10-23T09:00:00Z"), ZoneOffset.UTC);
 
     private final InMemoryPersonStore store = new InMemoryPersonStore();
-    private final PersonService service = new PersonService(store, store, store, CLOCK, event -> { });
+    private final List<Object> events = new ArrayList<>();
+    private final PersonService service = new PersonService(store, store, store, CLOCK, events::add);
 
     @Test
     void registersAPersonAndReadsItBack() {
@@ -80,6 +84,54 @@ class PersonServiceTest {
                 .extracting(PersonDetails::firstName).containsExactly("Asha");
         assertThat(service.search(new PeopleSearch("98450", null, 20)).items()).hasSize(1);
         assertThat(service.search(new PeopleSearch("ravi kum", null, 20)).items()).hasSize(1);
+    }
+
+    @Test
+    void anEditSavesTheNewDetailsMovesTheVersionOnAndSaysWhatChanged() {
+        UUID id = service.register(new RegisterPersonCommand("Asha", "Rao", null, "+91 98450 00000", null));
+        events.clear();
+
+        PersonDetails edited = service.edit(new EditPersonCommand(id, 0, "Asha", "Rao", null, "+91 98450 11111", "asha@example.org"));
+
+        assertThat(edited.version()).isEqualTo(1);
+        assertThat(service.getPerson(id).phone()).isEqualTo("+91 98450 11111");
+        assertThat(events).containsExactly(new PersonEdited(id, "Asha Rao", List.of("phone", "email")));
+    }
+
+    @Test
+    void anEditMadeOnAnOldVersionIsRefusedAndChangesNothing() {
+        UUID id = service.register(new RegisterPersonCommand("Asha", "Rao", null, null, null));
+        service.edit(new EditPersonCommand(id, 0, "Asha", "Rao-Menon", null, null, null));   // someone else, first
+
+        assertThatThrownBy(() -> service.edit(new EditPersonCommand(id, 0, "Asha", "Rao", null, "+91 98450 11111", null)))
+                .isInstanceOf(EditConflictException.class)
+                .hasMessageContaining("you had version 0, it is now at 1");
+        assertThat(service.getPerson(id).lastName()).isEqualTo("Rao-Menon");   // their change survived
+        assertThat(service.getPerson(id).phone()).isNull();
+    }
+
+    @Test
+    void savingAnUntouchedFormChangesNothingAndIsNotAudited() {
+        UUID id = service.register(new RegisterPersonCommand("Asha", "Rao", null, "+91 98450 00000", null));
+        events.clear();
+
+        // " Asha " is "Asha" once trimmed, and "" is "no email": the same details
+        PersonDetails same = service.edit(new EditPersonCommand(id, 0, " Asha ", "Rao", null, "+91 98450 00000", ""));
+
+        assertThat(same.version()).isZero();
+        assertThat(events).isEmpty();
+    }
+
+    @Test
+    void anEditKeepsTheRulesOfRegistering() {
+        UUID id = service.register(new RegisterPersonCommand("Asha", "Rao", null, null, null));
+
+        assertThatThrownBy(() -> service.edit(new EditPersonCommand(id, 0, "Asha", " ", null, null, null)))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> service.edit(new EditPersonCommand(id, 0, "Asha", "Rao", LocalDate.of(2026, 10, 24), null, null)))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> service.edit(new EditPersonCommand(UUID.randomUUID(), 0, "Asha", "Rao", null, null, null)))
+                .isInstanceOf(PersonNotFoundException.class);
     }
 
     @Test

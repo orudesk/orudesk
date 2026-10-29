@@ -1,7 +1,9 @@
 package com.orudesk.orudesk.shared.adapter.in.web;
 
+import com.orudesk.orudesk.shared.EditConflictException;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.dao.QueryTimeoutException;
 import org.springframework.dao.UncategorizedDataAccessException;
 import org.springframework.http.HttpHeaders;
@@ -55,6 +57,28 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
                 "the data conflicts with existing data");
         problem.setTitle("Conflict");
+        return problem;
+    }
+
+    /** The client edited an old version of the record (Day 46): it reloads, and the user makes the change again. */
+    @ExceptionHandler(EditConflictException.class)
+    ProblemDetail editConflict(EditConflictException e) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, e.getMessage());
+        problem.setTitle("Edit conflict");
+        problem.setProperty("currentVersion", e.currentVersion());
+        return problem;
+    }
+
+    /**
+     * The same, caught by the database instead: two saves of the same version raced each other, the first one won,
+     * and the second one's "UPDATE ... WHERE version = 3" found no row. Rare (the two must overlap by milliseconds),
+     * so the message is the same and nobody needs to know which check caught it.
+     */
+    @ExceptionHandler(OptimisticLockingFailureException.class)
+    ProblemDetail raceLost(OptimisticLockingFailureException e) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+                "this record was changed by someone else at the same moment; reload it and make your change again");
+        problem.setTitle("Edit conflict");
         return problem;
     }
 

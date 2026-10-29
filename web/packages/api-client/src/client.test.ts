@@ -23,6 +23,7 @@ describe('createOrudeskClient', () => {
       dateOfBirth: null,
       phone: null,
       email: 'asha@example.org',
+      version: 0,
     };
     const { fetch, requests } = fakeFetch(person);
     const client = createOrudeskClient({ baseUrl: 'http://api.test', fetch });

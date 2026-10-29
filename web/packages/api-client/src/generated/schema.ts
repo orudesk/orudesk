@@ -168,7 +168,11 @@ export interface paths {
     };
     /** One person */
     get: operations['getPerson'];
-    put?: never;
+    /**
+     * Change a person's details
+     * @description Send the version you read. 409 if the person was changed since: reload and edit again.
+     */
+    put: operations['editPerson'];
     post?: never;
     delete?: never;
     options?: never;
@@ -300,6 +304,17 @@ export interface components {
       /** Format: uuid */
       id: string;
     };
+    EditPersonRequest: {
+      /** Format: date */
+      dateOfBirth?: string | null;
+      /** Format: email */
+      email?: string | null;
+      firstName: string;
+      lastName: string;
+      phone?: string | null;
+      /** Format: int64 */
+      version: number;
+    };
     Grant: {
       /** Format: uuid */
       orgUnitId?: string | null;
@@ -327,6 +342,8 @@ export interface components {
       id: string;
       lastName: string;
       phone?: string | null;
+      /** Format: int64 */
+      version: number;
     };
     PersonPage: {
       items: components['schemas']['PersonDetails'][];
@@ -681,6 +698,32 @@ export interface operations {
       cookie?: never;
     };
     requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['PersonDetails'];
+        };
+      };
+    };
+  };
+  editPerson: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        personId: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['EditPersonRequest'];
+      };
+    };
     responses: {
       /** @description OK */
       200: {

@@ -1,5 +1,7 @@
 package com.orudesk.orudesk.party.adapter.in.web;
 
+import com.orudesk.orudesk.party.application.port.in.EditPersonCommand;
+import com.orudesk.orudesk.party.application.port.in.EditPersonUseCase;
 import com.orudesk.orudesk.party.application.port.in.GetPersonQuery;
 import com.orudesk.orudesk.party.application.port.in.PeopleSearch;
 import com.orudesk.orudesk.party.application.port.in.PersonDetails;
@@ -16,6 +18,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -31,11 +34,14 @@ import java.util.UUID;
 class PersonController {
 
     private final RegisterPersonUseCase registerPerson;
+    private final EditPersonUseCase editPerson;
     private final GetPersonQuery getPerson;
     private final SearchPeopleQuery searchPeople;
 
-    PersonController(RegisterPersonUseCase registerPerson, GetPersonQuery getPerson, SearchPeopleQuery searchPeople) {
+    PersonController(RegisterPersonUseCase registerPerson, EditPersonUseCase editPerson, GetPersonQuery getPerson,
+                     SearchPeopleQuery searchPeople) {
         this.registerPerson = registerPerson;
+        this.editPerson = editPerson;
         this.getPerson = getPerson;
         this.searchPeople = searchPeople;
     }
@@ -65,5 +71,17 @@ class PersonController {
     @Operation(operationId = "getPerson", summary = "One person")
     PersonDetails get(@PathVariable UUID personId) {
         return getPerson.getPerson(personId);
+    }
+
+    /**
+     * PUT replaces the details with the body. 409 if the person changed since the client read the version it
+     * sends; the client reloads and the user makes the change again.
+     */
+    @PutMapping("/{personId}")
+    @Operation(operationId = "editPerson", summary = "Change a person's details",
+            description = "Send the version you read. 409 if the person was changed since: reload and edit again.")
+    PersonDetails edit(@PathVariable UUID personId, @Valid @RequestBody EditPersonRequest request) {
+        return editPerson.edit(new EditPersonCommand(personId, request.version(), request.firstName(),
+                request.lastName(), request.dateOfBirth(), request.phone(), request.email()));
     }
 }

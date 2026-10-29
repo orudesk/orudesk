@@ -59,7 +59,7 @@ class OpenApiContractTest {
 
         // A response: every field is always there; the @Nullable ones may be null
         List<String> personRequired = JsonPath.read(json, "$.components.schemas.PersonDetails.required");
-        assertThat(personRequired).containsExactlyInAnyOrder("id", "firstName", "lastName");
+        assertThat(personRequired).containsExactlyInAnyOrder("id", "firstName", "lastName", "version");
         List<String> phoneTypes = JsonPath.read(json, "$.components.schemas.PersonDetails.properties.phone.type");
         assertThat(phoneTypes).containsExactlyInAnyOrder("string", "null");
 
