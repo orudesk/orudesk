@@ -74,8 +74,14 @@ public class User {
         grants.remove(grant);
     }
 
+    /** The user can't log in any more, and their sessions end (Day 48). Their roles are kept, for enable(). */
     public void disable() {
         enabled = false;
+    }
+
+    /** Lets a disabled user log in again, with the roles they had. */
+    public void enable() {
+        enabled = true;
     }
 
     /** True if the user has the role everywhere in the tenant. Scoped roles are checked against the org tree. */

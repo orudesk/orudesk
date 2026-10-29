@@ -7,6 +7,7 @@ import com.orudesk.orudesk.identity.domain.MissingOrgUnitException;
 import com.orudesk.orudesk.identity.domain.OrgUnitCodeTakenException;
 import com.orudesk.orudesk.identity.domain.OrgUnitNotFoundException;
 import com.orudesk.orudesk.identity.domain.RoleChangeNotAllowedException;
+import com.orudesk.orudesk.identity.domain.SelfLockoutException;
 import com.orudesk.orudesk.identity.domain.TooManyLoginAttemptsException;
 import com.orudesk.orudesk.identity.domain.UnknownRoleException;
 import com.orudesk.orudesk.identity.domain.UserNotFoundException;
@@ -73,6 +74,11 @@ class IdentityExceptionHandler {
     @ExceptionHandler(RoleChangeNotAllowedException.class)
     ProblemDetail roleChangeNotAllowed(RoleChangeNotAllowedException e) {
         return problem(HttpStatus.CONFLICT, "Role change not allowed", e.getMessage());
+    }
+
+    @ExceptionHandler(SelfLockoutException.class)
+    ProblemDetail selfLockout(SelfLockoutException e) {
+        return problem(HttpStatus.CONFLICT, "Not allowed on your own account", e.getMessage());
     }
 
     private static ProblemDetail problem(HttpStatus status, String title, String detail) {

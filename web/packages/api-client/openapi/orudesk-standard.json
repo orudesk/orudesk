@@ -523,6 +523,48 @@
         "tags" : [ "Users" ]
       }
     },
+    "/api/v1/users/{userId}/disable" : {
+      "post" : {
+        "operationId" : "disableUser",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "userId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "summary" : "Stop a user from logging in, and end their sessions",
+        "tags" : [ "Users" ]
+      }
+    },
+    "/api/v1/users/{userId}/enable" : {
+      "post" : {
+        "operationId" : "enableUser",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "userId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "summary" : "Let a disabled user log in again",
+        "tags" : [ "Users" ]
+      }
+    },
     "/api/v1/users/{userId}/roles" : {
       "post" : {
         "operationId" : "assignRole",
