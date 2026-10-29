@@ -8,6 +8,10 @@ Every release of the Orudesk core, newest first. The format follows
 
 ### Added
 
+- `mobile/`: the start of the mobile apps. A Kotlin Multiplatform `shared` module (API client, login with the
+  two-factor step, session with the refresh token kept by each platform) tested on the JVM, and an Android app
+  in Jetpack Compose that logs in, asks for the authenticator code when needed, and stays signed in with the
+  refresh token encrypted under an Android Keystore key. Built in CI by the new `Mobile` workflow.
 - Web: a Security page (user menu, `/account/security`) to change the password, set up two-factor sign-in
   with a QR code (drawn in the browser) and see recovery codes once, and see and sign out sessions. The login
   page asks for the authenticator code, or a recovery code, when the account needs one. web-core now depends
