@@ -10,6 +10,7 @@ export function useAuth() {
     status,
     endReason: session.getEndReason(),
     login: session.login,
+    loginSecondFactor: session.loginSecondFactor,
     logout: session.logout,
     requestPasswordReset: session.requestPasswordReset,
     resetPassword: session.resetPassword,

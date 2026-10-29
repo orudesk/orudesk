@@ -33,6 +33,12 @@ export const coreModule: OrudeskModule = {
       lazy: async () => ({ Component: (await import('./pages/UsersPage')).UsersPage }),
     },
     {
+      path: '/account/security',
+      lazy: async () => ({
+        Component: (await import('./pages/AccountSecurityPage')).AccountSecurityPage,
+      }),
+    },
+    {
       path: '/activity',
       lazy: async () => ({ Component: (await import('./pages/ActivityPage')).ActivityPage }),
     },

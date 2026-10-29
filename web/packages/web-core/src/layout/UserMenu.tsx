@@ -1,5 +1,6 @@
 import { Avatar, Menu, UnstyledButton } from '@mantine/core';
-import { IconLogout } from '@tabler/icons-react';
+import { IconLogout, IconShieldLock } from '@tabler/icons-react';
+import { Link } from 'react-router';
 import { useAuth } from '../auth/useAuth';
 import { useMe } from '../queries/me';
 
@@ -19,6 +20,13 @@ export function UserMenu() {
       </Menu.Target>
       <Menu.Dropdown>
         <Menu.Label>{email}</Menu.Label>
+        <Menu.Item
+          component={Link}
+          to="/account/security"
+          leftSection={<IconShieldLock size={16} />}
+        >
+          Security
+        </Menu.Item>
         <Menu.Item leftSection={<IconLogout size={16} />} onClick={() => void logout()}>
           Log out
         </Menu.Item>

@@ -8,6 +8,10 @@ Every release of the Orudesk core, newest first. The format follows
 
 ### Added
 
+- Web: a Security page (user menu, `/account/security`) to change the password, set up two-factor sign-in
+  with a QR code (drawn in the browser) and see recovery codes once, and see and sign out sessions. The login
+  page asks for the authenticator code, or a recovery code, when the account needs one. web-core now depends
+  on `qrcode`.
 - `POST /api/v1/users/me/password` changes the user's own password (current one required) and signs out every
   other session; audited.
 - New passwords (registration, reset, change) are checked against Have I Been Pwned's breached passwords with

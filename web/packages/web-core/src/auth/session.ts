@@ -7,8 +7,14 @@ export type EndReason = 'expired' | 'unreachable' | null;
 
 export type LoginResult =
   | { ok: true }
-  | { ok: false; reason: 'credentials' | 'unavailable' | 'network' | 'other'; message?: string }
-  | { ok: false; reason: 'throttled'; retryAfterSeconds: number; message?: string };
+  | {
+      ok: false;
+      reason: 'credentials' | 'wrongCode' | 'expired' | 'unavailable' | 'network' | 'other';
+      message?: string;
+    }
+  | { ok: false; reason: 'throttled'; retryAfterSeconds: number; message?: string }
+  /** The password was right; the user has two-factor sign-in on (Day 68). Send a code with this token. */
+  | { ok: false; reason: 'secondFactor'; loginToken: string; message?: string };
 
 export type ResetResult =
   | { ok: true }
@@ -80,13 +86,35 @@ export class AuthSession {
         this.accept(data);
         return { ok: true };
       }
-      if (response.status === 401) return { ok: false, reason: 'credentials' };
-      if (response.status === 429) {
-        return { ok: false, reason: 'throttled', retryAfterSeconds: retryAfter(response) };
+      const problem = error as { title?: string; loginToken?: string } | undefined;
+      if (
+        response.status === 401 &&
+        problem?.title === 'Second factor required' &&
+        problem.loginToken
+      ) {
+        return { ok: false, reason: 'secondFactor', loginToken: problem.loginToken };
       }
-      if (response.status === 503) return { ok: false, reason: 'unavailable' };
-      const message = (error as { detail?: string } | undefined)?.detail;
-      return message ? { ok: false, reason: 'other', message } : { ok: false, reason: 'other' };
+      if (response.status === 401) return { ok: false, reason: 'credentials' };
+      return failure(response, error);
+    } catch {
+      return { ok: false, reason: 'network' };
+    }
+  };
+
+  /** The login's second step (Day 68): a code from the authenticator app, or a recovery code. */
+  loginSecondFactor = async (loginToken: string, code: string): Promise<LoginResult> => {
+    try {
+      const { data, error, response } = await this.authApi.POST('/api/v1/auth/login/two-factor', {
+        params: COOKIE,
+        body: { loginToken, code },
+      });
+      if (data) {
+        this.accept(data);
+        return { ok: true };
+      }
+      if (response.status === 400) return { ok: false, reason: 'wrongCode' };
+      if (response.status === 401) return { ok: false, reason: 'expired' };
+      return failure(response, error);
     } catch {
       return { ok: false, reason: 'network' };
     }
@@ -228,4 +256,14 @@ function retryAfter(response: Response): number {
   if (Number.isFinite(seconds) && seconds > 0) return seconds;
   const date = header === null ? NaN : Date.parse(header);
   return Number.isFinite(date) ? Math.max(1, Math.ceil((date - Date.now()) / 1000)) : 15 * 60;
+}
+
+/** What both login steps answer for 429, 503 and anything unexpected. */
+function failure(response: Response, error: unknown): LoginResult {
+  if (response.status === 429) {
+    return { ok: false, reason: 'throttled', retryAfterSeconds: retryAfter(response) };
+  }
+  if (response.status === 503) return { ok: false, reason: 'unavailable' };
+  const message = (error as { detail?: string } | undefined)?.detail;
+  return message ? { ok: false, reason: 'other', message } : { ok: false, reason: 'other' };
 }
