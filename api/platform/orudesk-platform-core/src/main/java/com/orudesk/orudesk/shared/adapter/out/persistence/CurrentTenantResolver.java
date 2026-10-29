@@ -1,5 +1,6 @@
 package com.orudesk.orudesk.shared.adapter.out.persistence;
 
+import com.orudesk.orudesk.shared.CurrentTenant;
 import org.hibernate.cfg.MultiTenancySettings;
 import org.hibernate.context.spi.CurrentTenantIdentifierResolver;
 import org.springframework.boot.hibernate.autoconfigure.HibernatePropertiesCustomizer;
@@ -9,6 +10,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -18,7 +20,8 @@ import java.util.UUID;
  * Requests without a JWT (register, login, refresh, startup) run as ROOT, which Hibernate does not filter.
  */
 @Component
-public class CurrentTenantResolver implements CurrentTenantIdentifierResolver<UUID>, HibernatePropertiesCustomizer {
+public class CurrentTenantResolver implements CurrentTenantIdentifierResolver<UUID>, HibernatePropertiesCustomizer,
+        CurrentTenant {
 
     /** Not a real tenant: a marker meaning "no logged-in user, don't filter". */
     static final UUID ROOT = new UUID(0, 0);
@@ -30,6 +33,12 @@ public class CurrentTenantResolver implements CurrentTenantIdentifierResolver<UU
             return UUID.fromString(jwt.getToken().getClaimAsString("tenant_id"));
         }
         return ROOT;
+    }
+
+    @Override
+    public Optional<UUID> id() {
+        UUID tenant = resolveCurrentTenantIdentifier();
+        return ROOT.equals(tenant) ? Optional.empty() : Optional.of(tenant);
     }
 
     @Override
