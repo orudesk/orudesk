@@ -11,5 +11,7 @@ export function useAuth() {
     endReason: session.getEndReason(),
     login: session.login,
     logout: session.logout,
+    requestPasswordReset: session.requestPasswordReset,
+    resetPassword: session.resetPassword,
   };
 }

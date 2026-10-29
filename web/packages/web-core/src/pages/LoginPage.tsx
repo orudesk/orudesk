@@ -1,5 +1,6 @@
 import {
   Alert,
+  Anchor,
   Button,
   Center,
   Paper,
@@ -10,7 +11,7 @@ import {
 } from '@mantine/core';
 import { IconAlertCircle } from '@tabler/icons-react';
 import { useState, type FormEvent } from 'react';
-import { Navigate, useSearchParams } from 'react-router';
+import { Link, Navigate, useSearchParams } from 'react-router';
 import type { LoginResult } from '../auth/session';
 import { safeRedirect } from '../auth/safeRedirect';
 import { useAuth } from '../auth/useAuth';
@@ -91,6 +92,9 @@ export function LoginPage() {
             <Button type="submit" loading={submitting} fullWidth>
               Log in
             </Button>
+            <Anchor component={Link} to="/forgot-password" size="sm" ta="center">
+              Forgot your password?
+            </Anchor>
           </Stack>
         </form>
       </Paper>

@@ -10,6 +10,14 @@ export type LoginResult =
   | { ok: false; reason: 'credentials' | 'unavailable' | 'network' | 'other'; message?: string }
   | { ok: false; reason: 'throttled'; retryAfterSeconds: number; message?: string };
 
+export type ResetResult =
+  | { ok: true }
+  | {
+      ok: false;
+      reason: 'invalidLink' | 'invalidPassword' | 'network' | 'other';
+      message?: string;
+    };
+
 /** Asks the API for the refresh token as an HttpOnly cookie (Day 29), never in JSON. */
 const COOKIE = { header: { 'X-Refresh-Token-Transport': 'cookie' } } as const;
 
@@ -79,6 +87,41 @@ export class AuthSession {
       if (response.status === 503) return { ok: false, reason: 'unavailable' };
       const message = (error as { detail?: string } | undefined)?.detail;
       return message ? { ok: false, reason: 'other', message } : { ok: false, reason: 'other' };
+    } catch {
+      return { ok: false, reason: 'network' };
+    }
+  };
+
+  /**
+   * "Email me a reset link" (Day 55). True when the API took the request, which says nothing about whether the
+   * email has an account: the API answers 202 either way, on purpose.
+   */
+  requestPasswordReset = async (email: string): Promise<boolean> => {
+    try {
+      const { response } = await this.authApi.POST('/api/v1/auth/password-reset', {
+        body: { email },
+      });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  };
+
+  /** Sets a new password with the token from the reset email. Doesn't log in: the user does, with the new one. */
+  resetPassword = async (token: string, newPassword: string): Promise<ResetResult> => {
+    try {
+      const { response, error } = await this.authApi.POST('/api/v1/auth/password-reset/confirm', {
+        body: { token, newPassword },
+      });
+      if (response.ok) return { ok: true };
+      const problem = error as { title?: string; detail?: string } | undefined;
+      if (response.status === 400 && problem?.title === 'Invalid reset link') {
+        return { ok: false, reason: 'invalidLink' };
+      }
+      if (response.status === 400) return { ok: false, reason: 'invalidPassword' };
+      return problem?.detail
+        ? { ok: false, reason: 'other', message: problem.detail }
+        : { ok: false, reason: 'other' };
     } catch {
       return { ok: false, reason: 'network' };
     }

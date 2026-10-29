@@ -3,11 +3,13 @@ import { RequireAuth } from './auth/RequireAuth';
 import { RouteError } from './errors/RouteError';
 import { AppLayout } from './layout/AppLayout';
 import type { OrudeskModule } from './module';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 
 /**
- * The app's routes: the login page, then every module's pages inside the login check and the shell. Two
+ * The app's routes: the login and password reset pages, then every module's pages inside the login check and the shell. Two
  * modules claiming the same path is a mistake in the edition's setup, so it fails at start, loudly, rather than
  * one page silently hiding the other.
  */
@@ -26,6 +28,9 @@ export function buildRoutes(modules: OrudeskModule[]): RouteObject[] {
 
   return [
     { path: '/login', element: <LoginPage />, errorElement: <RouteError /> },
+    // Outside RequireAuth: the people who need these pages are exactly the ones who can't log in (Day 55)
+    { path: '/forgot-password', element: <ForgotPasswordPage />, errorElement: <RouteError /> },
+    { path: '/reset-password', element: <ResetPasswordPage />, errorElement: <RouteError /> },
     {
       element: <RequireAuth />, // every route inside needs a login
       errorElement: <RouteError />, // the last line of defence: the shell itself failed
