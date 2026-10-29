@@ -12,7 +12,7 @@ kotlin {
 
     android {
         namespace = "com.orudesk.mobile.shared"
-        compileSdk = 36
+        compileSdk = 37
         minSdk = 26
     }
 

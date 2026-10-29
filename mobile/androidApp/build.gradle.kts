@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.orudesk.mobile.android"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "org.orudesk.app"
