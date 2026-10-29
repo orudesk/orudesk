@@ -112,7 +112,7 @@
           "required" : true
         },
         "responses" : {
-          "200" : {
+          "401" : {
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -120,11 +120,51 @@
                 }
               }
             },
-            "description" : "OK"
+            "description" : "'Login failed', or 'Second factor required' with a loginToken for POST /api/v1/auth/login/two-factor"
           }
         },
         "security" : [ ],
         "summary" : "Exchange email and password for an access and a refresh token",
+        "tags" : [ "Authentication" ]
+      }
+    },
+    "/api/v1/auth/login/two-factor" : {
+      "post" : {
+        "operationId" : "loginSecondFactor",
+        "parameters" : [ {
+          "description" : "Send 'cookie' to get and send the refresh token as an HttpOnly cookie instead of in JSON",
+          "in" : "header",
+          "name" : "X-Refresh-Token-Transport",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "cookie" ]
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SecondFactorRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "401" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TokenResponse"
+                }
+              }
+            },
+            "description" : "'Login expired': start again with the password"
+          }
+        },
+        "security" : [ ],
+        "summary" : "Finish a login with a code from the authenticator app, or a recovery code",
         "tags" : [ "Authentication" ]
       }
     },
@@ -1304,6 +1344,22 @@
           }
         },
         "required" : [ "code", "name" ]
+      },
+      "SecondFactorRequest" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "string",
+            "maxLength" : 20,
+            "minLength" : 0
+          },
+          "loginToken" : {
+            "type" : "string",
+            "maxLength" : 100,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "code", "loginToken" ]
       },
       "TokenResponse" : {
         "type" : "object",

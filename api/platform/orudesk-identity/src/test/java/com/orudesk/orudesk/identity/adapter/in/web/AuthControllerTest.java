@@ -4,6 +4,7 @@ import com.orudesk.orudesk.identity.application.port.in.*;
 import com.orudesk.orudesk.identity.domain.Email;
 import com.orudesk.orudesk.identity.domain.EmailAlreadyRegisteredException;
 import com.orudesk.orudesk.identity.domain.InvalidCredentialsException;
+import com.orudesk.orudesk.identity.domain.SecondFactorRequiredException;
 import com.orudesk.orudesk.identity.domain.TooManyLoginAttemptsException;
 import com.orudesk.orudesk.identity.domain.UserId;
 import com.orudesk.orudesk.shared.adapter.in.security.SecurityConfig;
@@ -39,6 +40,9 @@ class AuthControllerTest {
 
     @MockitoBean
     private LoginUseCase login;
+
+    @MockitoBean
+    private SecondFactorLoginUseCase secondFactorLogin;
 
     @MockitoBean
     private RefreshTokensUseCase refreshTokens;
@@ -120,6 +124,29 @@ class AuthControllerTest {
                                 """))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.title").value("Login failed"));
+    }
+
+    @Test
+    void aUserWithTwoFactorOnGetsATokenForTheSecondStepThenTokens() throws Exception {
+        given(login.login(any(LoginCommand.class))).willThrow(new SecondFactorRequiredException("step-two-token"));
+        given(secondFactorLogin.completeLogin(any(SecondFactorCommand.class)))
+                .willReturn(new AuthTokens("access", 900, "refresh"));
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email": "ck@orudesk.org", "password": "secret-password"}
+                                """))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.title").value("Second factor required"))
+                .andExpect(jsonPath("$.loginToken").value("step-two-token"));
+        mockMvc.perform(post("/api/v1/auth/login/two-factor")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"loginToken": "step-two-token", "code": "123456"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").value("access"));
     }
 
     @Test

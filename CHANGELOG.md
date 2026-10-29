@@ -8,6 +8,11 @@ Every release of the Orudesk core, newest first. The format follows
 
 ### Added
 
+- The login's second step: for a user with two-factor sign-in on, `POST /api/v1/auth/login` answers 401
+  "Second factor required" with a `loginToken` (valid 5 minutes, `orudesk.security.login.second-step-ttl`), and
+  `POST /api/v1/auth/login/two-factor` with that token and a code from the app, or a recovery code, returns the
+  tokens. Wrong codes count against the account like wrong passwords, a pending login ends after five, and each
+  code and token works once. A recovery code used to sign in is audited with the number left.
 - Two-factor sign-in with an authenticator app (TOTP, RFC 6238), set up from `/api/v1/users/me/two-factor`:
   `POST /setup` (current password) returns a secret and an `otpauth://` link for a QR code, `POST /confirm` with the
   app's first code turns it on and returns ten one-time recovery codes, `POST /recovery-codes` replaces them and

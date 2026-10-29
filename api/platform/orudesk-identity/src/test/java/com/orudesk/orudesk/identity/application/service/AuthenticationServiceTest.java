@@ -13,6 +13,7 @@ import com.orudesk.orudesk.identity.domain.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.util.UUID;
 
@@ -32,7 +33,9 @@ class AuthenticationServiceTest {
             (raw, hash) -> hash.value().equals("hashed:" + raw),
             (user, session) -> new AccessToken("access-for-" + user.email().value(), 900),
             refreshTokens,
-            loginAttempts);
+            loginAttempts,
+            new SecondFactor(new InMemoryTotpStore(), new PlainSecretBox(), event -> { }, Clock.systemUTC()),
+            new InMemoryPendingLogins());
 
     private User user;
 

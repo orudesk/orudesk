@@ -4,19 +4,21 @@ import com.orudesk.orudesk.identity.domain.EmailAlreadyRegisteredException;
 import com.orudesk.orudesk.identity.domain.InvalidCredentialsException;
 import com.orudesk.orudesk.identity.domain.InvalidPasswordResetTokenException;
 import com.orudesk.orudesk.identity.domain.InvalidRefreshTokenException;
+import com.orudesk.orudesk.identity.domain.LoginExpiredException;
 import com.orudesk.orudesk.identity.domain.MissingOrgUnitException;
 import com.orudesk.orudesk.identity.domain.OrgUnitCodeTakenException;
 import com.orudesk.orudesk.identity.domain.OrgUnitNotFoundException;
 import com.orudesk.orudesk.identity.domain.RoleChangeNotAllowedException;
+import com.orudesk.orudesk.identity.domain.SecondFactorRequiredException;
 import com.orudesk.orudesk.identity.domain.SelfLockoutException;
 import com.orudesk.orudesk.identity.domain.SessionNotFoundException;
 import com.orudesk.orudesk.identity.domain.TooManyLoginAttemptsException;
 import com.orudesk.orudesk.identity.domain.TwoFactorAlreadyEnabledException;
 import com.orudesk.orudesk.identity.domain.TwoFactorNotAvailableException;
-import com.orudesk.orudesk.identity.domain.WrongPasswordException;
-import com.orudesk.orudesk.identity.domain.WrongTwoFactorCodeException;
 import com.orudesk.orudesk.identity.domain.UnknownRoleException;
 import com.orudesk.orudesk.identity.domain.UserNotFoundException;
+import com.orudesk.orudesk.identity.domain.WrongPasswordException;
+import com.orudesk.orudesk.identity.domain.WrongTwoFactorCodeException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -80,6 +82,19 @@ class IdentityExceptionHandler {
     }
 
     /** 429 with Retry-After (in seconds), the standard way to say "slow down" that clients and proxies understand. */
+    /** 401 with the token for the second step: the client shows the code field instead of an error (Day 68). */
+    @ExceptionHandler(SecondFactorRequiredException.class)
+    ProblemDetail secondFactorRequired(SecondFactorRequiredException e) {
+        ProblemDetail problem = problem(HttpStatus.UNAUTHORIZED, "Second factor required", e.getMessage());
+        problem.setProperty("loginToken", e.loginToken());
+        return problem;
+    }
+
+    @ExceptionHandler(LoginExpiredException.class)
+    ProblemDetail loginExpired(LoginExpiredException e) {
+        return problem(HttpStatus.UNAUTHORIZED, "Login expired", e.getMessage());
+    }
+
     @ExceptionHandler(TooManyLoginAttemptsException.class)
     ResponseEntity<ProblemDetail> tooManyLoginAttempts(TooManyLoginAttemptsException e) {
         long seconds = Math.max(1, e.retryAfter().toSeconds());

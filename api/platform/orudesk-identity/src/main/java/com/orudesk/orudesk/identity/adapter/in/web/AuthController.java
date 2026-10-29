@@ -9,6 +9,8 @@ import com.orudesk.orudesk.identity.application.port.in.PasswordResetUseCase;
 import com.orudesk.orudesk.identity.application.port.in.RefreshTokensUseCase;
 import com.orudesk.orudesk.identity.application.port.in.RegisterUserCommand;
 import com.orudesk.orudesk.identity.application.port.in.RegisterUserUseCase;
+import com.orudesk.orudesk.identity.application.port.in.SecondFactorCommand;
+import com.orudesk.orudesk.identity.application.port.in.SecondFactorLoginUseCase;
 import com.orudesk.orudesk.identity.domain.Email;
 import com.orudesk.orudesk.identity.domain.InvalidRefreshTokenException;
 import com.orudesk.orudesk.identity.domain.TenantId;
@@ -48,18 +50,20 @@ class AuthController {
 
     private final RegisterUserUseCase registerUser;
     private final LoginUseCase login;
+    private final SecondFactorLoginUseCase secondFactorLogin;
     private final RefreshTokensUseCase refreshTokens;
     private final LogoutUseCase logout;
     private final PasswordResetUseCase passwordReset;
     private final RefreshTokenCookie cookie;
     private final TenantId defaultTenant;
 
-    AuthController(RegisterUserUseCase registerUser, LoginUseCase login,
+    AuthController(RegisterUserUseCase registerUser, LoginUseCase login, SecondFactorLoginUseCase secondFactorLogin,
                    RefreshTokensUseCase refreshTokens, LogoutUseCase logout, PasswordResetUseCase passwordReset,
                    RefreshTokenCookie cookie,
                    @Value("${orudesk.identity.default-tenant-id}") UUID defaultTenantId) {
         this.registerUser = registerUser;
         this.login = login;
+        this.secondFactorLogin = secondFactorLogin;
         this.refreshTokens = refreshTokens;
         this.logout = logout;
         this.passwordReset = passwordReset;
@@ -89,11 +93,27 @@ class AuthController {
 
     @PostMapping("/login")
     @Operation(operationId = "login", summary = "Exchange email and password for an access and a refresh token")
+    @ApiResponse(responseCode = "401", description = "'Login failed', or 'Second factor required' with a loginToken "
+            + "for POST /api/v1/auth/login/two-factor")
     @TransportHeader
     ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request,
                                         @RequestHeader(name = RefreshTokenCookie.TRANSPORT_HEADER, required = false)
                                         @Nullable String transport, HttpServletRequest http) {
         AuthTokens tokens = login.login(new LoginCommand(new Email(request.email()), request.password(), client(http)));
+        return tokens(tokens, transport);
+    }
+
+    /** The second step, for users with two-factor sign-in on (Day 68). Answers like a login. */
+    @PostMapping("/login/two-factor")
+    @Operation(operationId = "loginSecondFactor",
+            summary = "Finish a login with a code from the authenticator app, or a recovery code")
+    @ApiResponse(responseCode = "401", description = "'Login expired': start again with the password")
+    @TransportHeader
+    ResponseEntity<TokenResponse> loginSecondFactor(@Valid @RequestBody SecondFactorRequest request,
+                                                    @RequestHeader(name = RefreshTokenCookie.TRANSPORT_HEADER, required = false)
+                                                    @Nullable String transport, HttpServletRequest http) {
+        AuthTokens tokens = secondFactorLogin.completeLogin(
+                new SecondFactorCommand(request.loginToken(), request.code(), client(http)));
         return tokens(tokens, transport);
     }
 

@@ -32,7 +32,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/** Day 67: turning on two-factor sign-in with an authenticator app, real PostgreSQL. */
+/** Days 67-68: two-factor sign-in with an authenticator app, real PostgreSQL and Redis. */
 @SpringBootTest
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
@@ -55,8 +55,7 @@ class TwoFactorIntegrationTest {
     @BeforeEach
     void user() throws Exception {
         asha = registerUser.register(new RegisterUserCommand(DEMO, new Email("test-2fa-asha@orudesk.org"), "asha-password"));
-        String body = mockMvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\": \"test-2fa-asha@orudesk.org\", \"password\": \"asha-password\"}"))
+        String body = login()
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         token = JsonPath.read(body, "$.accessToken");
@@ -102,6 +101,35 @@ class TwoFactorIntegrationTest {
     }
 
     @Test
+    void withTwoFactorOnTheLoginAsksForACodeAndARecoveryCodeWorksOnce() throws Exception {
+        String secret = setup();
+        String codes = change("/confirm", "{\"code\": \"" + codeNow(secret) + "\"}")
+                .andReturn().getResponse().getContentAsString();
+        String recoveryCode = JsonPath.<List<String>>read(codes, "$.recoveryCodes").getFirst();
+
+        String first = login().andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.title").value("Second factor required"))
+                .andExpect(jsonPath("$.accessToken").doesNotExist())
+                .andReturn().getResponse().getContentAsString();
+        String loginToken = JsonPath.read(first, "$.loginToken");
+
+        secondStep(loginToken, "000000")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.code").exists());
+        secondStep(loginToken, recoveryCode)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").exists());
+        secondStep(loginToken, recoveryCode)
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.title").value("Login expired"));
+
+        twoFactor().andExpect(jsonPath("$.recoveryCodesLeft").value(9));
+        Integer audited = jdbc.queryForObject("SELECT COUNT(*) FROM audit_entry WHERE subject_id = ?"
+                + " AND action = 'identity.two-factor.recovery-code-used'", Integer.class, asha.value());
+        assertThat(audited).isEqualTo(1);
+    }
+
+    @Test
     void theWrongPasswordChangesNothing() throws Exception {
         change("/setup", "{\"password\": \"not-it\"}")
                 .andExpect(status().isBadRequest())
@@ -116,6 +144,16 @@ class TwoFactorIntegrationTest {
                 .andExpect(jsonPath("$.otpauthUri").value(startsWith("otpauth://totp/Orudesk")))
                 .andReturn().getResponse().getContentAsString();
         return JsonPath.read(body, "$.secret");
+    }
+
+    private ResultActions login() throws Exception {
+        return mockMvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\": \"test-2fa-asha@orudesk.org\", \"password\": \"asha-password\"}"));
+    }
+
+    private ResultActions secondStep(String loginToken, String code) throws Exception {
+        return mockMvc.perform(post("/api/v1/auth/login/two-factor").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"loginToken\": \"" + loginToken + "\", \"code\": \"" + code + "\"}"));
     }
 
     private static String codeNow(String secret) {
