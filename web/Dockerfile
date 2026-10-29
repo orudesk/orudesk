@@ -5,9 +5,10 @@
 # ---- Stage 1: build the app with Node ----
 FROM node:26-alpine AS build
 WORKDIR /src
-RUN corepack enable
 # The lockfile and package.json files first, so Docker reuses the install layer until dependencies change.
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# Node 25 and later ship without corepack, so npm installs the pnpm version package.json names.
+RUN npm install -g "$(node -p "require('./package.json').packageManager")"
 COPY apps/standard/package.json apps/standard/
 COPY packages/api-client/package.json packages/api-client/
 COPY packages/web-core/package.json packages/web-core/
