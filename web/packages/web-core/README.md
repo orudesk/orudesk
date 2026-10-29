@@ -45,6 +45,8 @@ Both need `vitest` and `@testing-library/react` (and `@testing-library/jest-dom`
 ## Versions
 
 Released with the Orudesk core, with the same version number: `@orudesk/web-core@1.2.0` goes with the API
-of Orudesk 1.2.0. See the [changelog](https://github.com/orudesk/orudesk/blob/main/CHANGELOG.md).
+of Orudesk 1.2.0. Removing or renaming anything exported from `src/index.ts`, or raising a peer dependency's
+major version, is a breaking change and waits for a major release; `src/publicApi.test.ts` lists the exported
+names so such a change is never an accident. See the [changelog](https://github.com/orudesk/orudesk/blob/main/CHANGELOG.md).
 
 Licence: AGPL-3.0-only.
