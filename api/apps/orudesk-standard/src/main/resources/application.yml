@@ -73,6 +73,12 @@ orudesk:
   web:
     # Other origins whose pages may call the API (CORS), comma-separated. Empty: only the same origin.
     allowed-origins: ${ORUDESK_WEB_ALLOWED_ORIGINS:}
+    # Where the web app is, for links in emails (Day 52): https://erp.example.org, without a trailing slash
+    base-url: ${ORUDESK_WEB_BASE_URL:http://localhost:5173}
+  mail:
+    # Who emails come from. The mail server itself is spring.mail.host / port / username / password
+    # (SPRING_MAIL_HOST...): without a host, emails are written to the log instead of sent.
+    from: ${ORUDESK_MAIL_FROM:Orudesk <no-reply@orudesk.local>}
 
 # Actuator: what an orchestrator (Docker, Kubernetes) asks to decide if the app is alive and ready.
 management:

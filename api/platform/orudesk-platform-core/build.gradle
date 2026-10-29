@@ -21,6 +21,8 @@ dependencies {
     // event_publication table in the publisher's transaction, and marked complete when the listener succeeds
     api platform('org.springframework.modulith:spring-modulith-bom:2.1.2')
     api 'org.springframework.modulith:spring-modulith-starter-jdbc'
+    // Email through SMTP (Day 52), behind the EmailSender port
+    api 'org.springframework.boot:spring-boot-starter-mail'
     // RecordNullabilityModelConverter plugs into springdoc's schema generation. compileOnly: it's used only
     // when an app has springdoc (which brings swagger-core), and the converter's configuration checks that.
     compileOnly 'io.swagger.core.v3:swagger-core-jakarta:2.2.55'
