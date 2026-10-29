@@ -23,6 +23,8 @@ dependencies {
     api 'org.springframework.modulith:spring-modulith-starter-jdbc'
     // Email through SMTP (Day 52), behind the EmailSender port
     api 'org.springframework.boot:spring-boot-starter-mail'
+    // Gauges for the outbox (Day 54). Only the API: the app's actuator decides where metrics go
+    implementation 'io.micrometer:micrometer-core'
     // RecordNullabilityModelConverter plugs into springdoc's schema generation. compileOnly: it's used only
     // when an app has springdoc (which brings swagger-core), and the converter's configuration checks that.
     compileOnly 'io.swagger.core.v3:swagger-core-jakarta:2.2.55'

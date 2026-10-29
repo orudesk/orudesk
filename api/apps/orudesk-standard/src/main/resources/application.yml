@@ -1,6 +1,14 @@
 spring:
   application:
     name: orudesk
+  modulith:
+    events:
+      # A publication stuck in one state this long is marked FAILED, so the retry (Day 54) picks it up: the
+      # instance that was running it crashed, or it was published just before a shutdown.
+      staleness:
+        published: 15m
+        processing: 15m
+        resubmitted: 15m
 
   # Java 21+ virtual threads: each request gets a cheap virtual thread instead of one from Tomcat's pool of 200.
   threads:
@@ -70,6 +78,10 @@ orudesk:
   events:
     # The outbox (Day 51): completed event publications stay this long ("did the email go out?"), then go
     keep-completed: ${ORUDESK_EVENTS_KEEP_COMPLETED:7d}
+    # Failed publications are retried 1, 2, 4, 8... minutes apart (at most an hour), then left for a person (Day 54)
+    retry:
+      first-backoff: ${ORUDESK_EVENTS_RETRY_FIRST_BACKOFF:1m}
+      max-attempts: ${ORUDESK_EVENTS_RETRY_MAX_ATTEMPTS:10}
   metrics:
     # The secret Prometheus sends to read /actuator/prometheus (at least 32 characters). Empty: nobody can.
     token: ${ORUDESK_METRICS_TOKEN:}
