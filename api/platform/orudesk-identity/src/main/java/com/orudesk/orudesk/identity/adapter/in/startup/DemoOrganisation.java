@@ -74,6 +74,6 @@ class DemoOrganisation {
     }
 
     private UserId user(String email) {
-        return registerUser.register(new RegisterUserCommand(tenant, new Email(email), PASSWORD));
+        return registerUser.register(RegisterUserCommand.fromConfiguration(tenant, new Email(email), PASSWORD));
     }
 }

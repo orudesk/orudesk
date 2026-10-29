@@ -39,7 +39,7 @@ public class RegisterUserService implements RegisterUserUseCase {
         if (loadUserPort.existsByEmail(command.email())) {
             throw new EmailAlreadyRegisteredException(command.email());
         }
-        if (breachedPasswords.isBreached(command.rawPassword())) {
+        if (command.checkBreaches() && breachedPasswords.isBreached(command.rawPassword())) {
             throw new BreachedPasswordException("password");
         }
         User user = User.register(command.tenantId(), command.email(), passwordHasher.hash(command.rawPassword()));

@@ -16,7 +16,8 @@ Every release of the Orudesk core, newest first. The format follows
   other session; audited.
 - New passwords (registration, reset, change) are checked against Have I Been Pwned's breached passwords with
   k-anonymity: only the first five characters of the SHA-1 hash leave the server. A breached password is a 400
-  field error. If the service can't be reached the password is allowed. `ORUDESK_BREACHED_PASSWORD_CHECK=false`
+  field error. If the service can't be reached the password is allowed. Passwords from the configuration
+  (the first admin's, the demo's) are not checked, so they can't stop the application from starting. `ORUDESK_BREACHED_PASSWORD_CHECK=false`
   turns the check off.
 - The login's second step: for a user with two-factor sign-in on, `POST /api/v1/auth/login` answers 401
   "Second factor required" with a `loginToken` (valid 5 minutes, `orudesk.security.login.second-step-ttl`), and

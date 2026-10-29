@@ -54,6 +54,14 @@ class RegisterUserServiceTest {
     }
 
     @Test
+    void aPasswordFromTheConfigurationIsNotChecked() {
+        // The first admin's or the demo's: refusing it would stop the application from starting
+        service.register(RegisterUserCommand.fromConfiguration(DEMO, new Email("admin@orudesk.com"), "password123"));
+
+        assertThat(store.existsByEmail(new Email("admin@orudesk.com"))).isTrue();
+    }
+
+    @Test
     void rejectsAShortPassword() {
         assertThatThrownBy(() -> new RegisterUserCommand(DEMO, new Email("karthikeyan@orudesk.com"), "short"))
                 .isInstanceOf(IllegalArgumentException.class)

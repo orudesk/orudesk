@@ -51,7 +51,7 @@ class FirstAdminInitializer implements ApplicationRunner {
             return;
         }
         try {
-            UserId id = registerUser.register(new RegisterUserCommand(defaultTenant, new Email(email), password));
+            UserId id = registerUser.register(RegisterUserCommand.fromConfiguration(defaultTenant, new Email(email), password));
             assignRole.assignRole(id, RoleCode.ADMIN);
             log.info("Created the first admin: {}", email);
         } catch (EmailAlreadyRegisteredException _) {
