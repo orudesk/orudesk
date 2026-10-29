@@ -1,5 +1,6 @@
 package com.orudesk.orudesk.identity.application.service;
 
+import com.orudesk.orudesk.identity.application.port.in.ClientInfo;
 import com.orudesk.orudesk.identity.application.port.in.PasswordChanged;
 import com.orudesk.orudesk.identity.application.port.in.PasswordResetRequested;
 import com.orudesk.orudesk.identity.domain.Email;
@@ -61,8 +62,8 @@ class PasswordResetServiceTest {
 
     @Test
     void theTokenSetsTheNewPasswordEndsEverySessionAndLiftsTheLoginBlock() {
-        refreshTokens.create(user.id());
-        refreshTokens.create(user.id());
+        refreshTokens.start(user.id(), ClientInfo.unknown());
+        refreshTokens.start(user.id(), ClientInfo.unknown());
         for (int i = 0; i < InMemoryLoginAttemptLimiter.MAX_FAILURES; i++) {
             loginAttempts.failed(EMAIL);
         }

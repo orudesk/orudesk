@@ -569,6 +569,61 @@
         "tags" : [ "Users" ]
       }
     },
+    "/api/v1/users/me/sessions" : {
+      "get" : {
+        "operationId" : "listMySessions",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/ActiveSession"
+                  }
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "The devices the logged-in user is signed in on, most recent first",
+        "tags" : [ "Users" ]
+      }
+    },
+    "/api/v1/users/me/sessions/end-others" : {
+      "post" : {
+        "operationId" : "endMyOtherSessions",
+        "responses" : {
+          "204" : {
+            "description" : "Every other session has ended"
+          }
+        },
+        "summary" : "Sign out everywhere except this session",
+        "tags" : [ "Users" ]
+      }
+    },
+    "/api/v1/users/me/sessions/{sessionId}" : {
+      "delete" : {
+        "operationId" : "endMySession",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "sessionId",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "Ended: its refresh and access tokens stop working"
+          }
+        },
+        "summary" : "Sign out one of the logged-in user's sessions",
+        "tags" : [ "Users" ]
+      }
+    },
     "/api/v1/users/{userId}/disable" : {
       "post" : {
         "operationId" : "disableUser",
@@ -681,6 +736,33 @@
   },
   "components" : {
     "schemas" : {
+      "ActiveSession" : {
+        "type" : "object",
+        "properties" : {
+          "current" : {
+            "type" : "boolean"
+          },
+          "device" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "ipAddress" : {
+            "type" : "string"
+          },
+          "lastUsedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "startedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "current", "device", "id", "ipAddress", "lastUsedAt", "startedAt" ]
+      },
       "AssignRoleRequest" : {
         "type" : "object",
         "properties" : {

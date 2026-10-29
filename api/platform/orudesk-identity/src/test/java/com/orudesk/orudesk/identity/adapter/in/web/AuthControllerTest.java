@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -158,7 +159,7 @@ class AuthControllerTest {
 
     @Test
     void refreshReadsTheCookieWhenThereIsNoBody() throws Exception {
-        given(refreshTokens.refresh("the-old-refresh-token")).willReturn(new AuthTokens("new-access", 900, "new-refresh"));
+        given(refreshTokens.refresh(eq("the-old-refresh-token"), any())).willReturn(new AuthTokens("new-access", 900, "new-refresh"));
 
         mockMvc.perform(post("/api/v1/auth/refresh")
                         .header("X-Refresh-Token-Transport", "cookie")
@@ -175,7 +176,7 @@ class AuthControllerTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.title").value("Invalid refresh token"));
 
-        verify(refreshTokens, never()).refresh(any());
+        verify(refreshTokens, never()).refresh(any(), any());
     }
 
     @Test

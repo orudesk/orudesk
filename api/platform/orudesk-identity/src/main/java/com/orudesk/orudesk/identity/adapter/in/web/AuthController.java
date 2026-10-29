@@ -1,6 +1,7 @@
 package com.orudesk.orudesk.identity.adapter.in.web;
 
 import com.orudesk.orudesk.identity.application.port.in.AuthTokens;
+import com.orudesk.orudesk.identity.application.port.in.ClientInfo;
 import com.orudesk.orudesk.identity.application.port.in.LoginCommand;
 import com.orudesk.orudesk.identity.application.port.in.LoginUseCase;
 import com.orudesk.orudesk.identity.application.port.in.LogoutUseCase;
@@ -19,6 +20,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
@@ -90,8 +92,8 @@ class AuthController {
     @TransportHeader
     ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request,
                                         @RequestHeader(name = RefreshTokenCookie.TRANSPORT_HEADER, required = false)
-                                        @Nullable String transport) {
-        AuthTokens tokens = login.login(new LoginCommand(new Email(request.email()), request.password()));
+                                        @Nullable String transport, HttpServletRequest http) {
+        AuthTokens tokens = login.login(new LoginCommand(new Email(request.email()), request.password(), client(http)));
         return tokens(tokens, transport);
     }
 
@@ -104,9 +106,9 @@ class AuthController {
                                           @CookieValue(name = RefreshTokenCookie.NAME, required = false)
                                           @Nullable String cookieToken,
                                           @RequestHeader(name = RefreshTokenCookie.TRANSPORT_HEADER, required = false)
-                                          @Nullable String transport) {
+                                          @Nullable String transport, HttpServletRequest http) {
         String refreshToken = refreshToken(request, cookieToken, transport);
-        return tokens(refreshTokens.refresh(refreshToken), transport);
+        return tokens(refreshTokens.refresh(refreshToken, client(http)), transport);
     }
 
     @PostMapping("/logout")
@@ -144,6 +146,14 @@ class AuthController {
     ResponseEntity<Void> confirmPasswordReset(@Valid @RequestBody ConfirmPasswordResetRequest request) {
         passwordReset.resetPassword(request.token(), request.newPassword());
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * The device and address shown in the user's list of sessions. Behind Caddy, getRemoteAddr() is the client's
+     * address because Spring trusts X-Forwarded-For from private networks (server.forward-headers-strategy).
+     */
+    private static ClientInfo client(HttpServletRequest http) {
+        return ClientInfo.of(http.getHeader(HttpHeaders.USER_AGENT), http.getRemoteAddr());
     }
 
     private ResponseEntity<TokenResponse> tokens(AuthTokens tokens, @Nullable String transport) {

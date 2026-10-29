@@ -1,6 +1,7 @@
 package com.orudesk.orudesk.identity.application.service;
 
 import com.orudesk.orudesk.identity.application.port.in.AuthTokens;
+import com.orudesk.orudesk.identity.application.port.in.ClientInfo;
 import com.orudesk.orudesk.identity.application.port.in.LoginCommand;
 import com.orudesk.orudesk.identity.application.port.in.LoginUseCase;
 import com.orudesk.orudesk.identity.application.port.in.LogoutUseCase;
@@ -10,16 +11,18 @@ import com.orudesk.orudesk.identity.application.port.out.AccessTokenIssuer;
 import com.orudesk.orudesk.identity.application.port.out.LoadUserPort;
 import com.orudesk.orudesk.identity.application.port.out.LoginAttemptLimiter;
 import com.orudesk.orudesk.identity.application.port.out.PasswordVerifier;
+import com.orudesk.orudesk.identity.application.port.out.RefreshGrant;
 import com.orudesk.orudesk.identity.application.port.out.RefreshTokenStore;
+import com.orudesk.orudesk.identity.application.port.out.SessionRef;
 import com.orudesk.orudesk.identity.domain.InvalidCredentialsException;
 import com.orudesk.orudesk.identity.domain.InvalidRefreshTokenException;
 import com.orudesk.orudesk.identity.domain.TooManyLoginAttemptsException;
 import com.orudesk.orudesk.identity.domain.User;
-import com.orudesk.orudesk.identity.domain.UserId;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class AuthenticationService implements LoginUseCase, RefreshTokensUseCase, LogoutUseCase {
@@ -55,16 +58,19 @@ public class AuthenticationService implements LoginUseCase, RefreshTokensUseCase
             throw new InvalidCredentialsException();
         }
         loginAttempts.succeeded(command.email());
-        return issueTokens(user.get());
+        RefreshGrant grant = refreshTokenStore.start(user.get().id(), command.client());
+        return tokens(user.get(), grant.sessionId(), grant.token());
     }
 
     @Override
-    public AuthTokens refresh(String refreshToken) {
-        UserId userId = refreshTokenStore.consume(refreshToken).orElseThrow(InvalidRefreshTokenException::new);
-        User user = loadUserPort.findById(userId)
-                .filter(User::isEnabled)
-                .orElseThrow(InvalidRefreshTokenException::new);
-        return issueTokens(user);
+    public AuthTokens refresh(String refreshToken, ClientInfo client) {
+        SessionRef session = refreshTokenStore.consume(refreshToken).orElseThrow(InvalidRefreshTokenException::new);
+        Optional<User> user = loadUserPort.findById(session.userId()).filter(User::isEnabled);
+        if (user.isEmpty()) {
+            refreshTokenStore.end(session.userId(), session.sessionId());
+            throw new InvalidRefreshTokenException();
+        }
+        return tokens(user.get(), session.sessionId(), refreshTokenStore.renew(session, client));
     }
 
     @Override
@@ -72,9 +78,8 @@ public class AuthenticationService implements LoginUseCase, RefreshTokensUseCase
         refreshTokenStore.revoke(refreshToken);
     }
 
-    private AuthTokens issueTokens(User user) {
-        AccessToken accessToken = accessTokenIssuer.issue(user);
-        String refreshToken = refreshTokenStore.create(user.id());
+    private AuthTokens tokens(User user, UUID sessionId, String refreshToken) {
+        AccessToken accessToken = accessTokenIssuer.issue(user, sessionId);
         return new AuthTokens(accessToken.value(), accessToken.expiresInSeconds(), refreshToken);
     }
 }

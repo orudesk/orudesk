@@ -30,7 +30,7 @@ class AuthenticationServiceTest {
     private final AuthenticationService service = new AuthenticationService(
             users,
             (raw, hash) -> hash.value().equals("hashed:" + raw),
-            user -> new AccessToken("access-for-" + user.email().value(), 900),
+            (user, session) -> new AccessToken("access-for-" + user.email().value(), 900),
             refreshTokens,
             loginAttempts);
 

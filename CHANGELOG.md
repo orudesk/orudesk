@@ -8,6 +8,12 @@ Every release of the Orudesk core, newest first. The format follows
 
 ### Added
 
+- Sessions: each login is a session that lives through every token refresh. `GET /api/v1/users/me/sessions` lists
+  where the user is signed in (device, address, when), `DELETE /api/v1/users/me/sessions/{id}` signs one out and
+  `POST /api/v1/users/me/sessions/end-others` signs out everywhere else; both are audited. Access tokens name their
+  session (`sid`), and a token whose session has ended (logout, sign-out from another device, password reset) is
+  refused at once instead of when it expires. Behind a proxy on a private network the API now reads the client's
+  address from `X-Forwarded-For` (`server.forward-headers-strategy: native`).
 - The web packages are published to npm with each release, with the release's version:
   `@orudesk/web-core` and `@orudesk/api-client`. An edition's web app can depend on them instead of checking
   out the core next to itself.

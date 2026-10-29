@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 /** Creates signed JWT access tokens that carry the user's id, tenant and roles. */
 @Component
@@ -32,7 +33,7 @@ class JwtAccessTokenIssuer implements AccessTokenIssuer {
     }
 
     @Override
-    public AccessToken issue(User user) {
+    public AccessToken issue(User user, UUID sessionId) {
         Instant now = Instant.now();
         List<String> roles = user.roles().stream().map(RoleCode::value).sorted().toList();
         JwtClaimsSet claims = JwtClaimsSet.builder()
@@ -43,6 +44,7 @@ class JwtAccessTokenIssuer implements AccessTokenIssuer {
                 .claim("email", user.email().value())
                 .claim("tenant_id", user.tenantId().value().toString())
                 .claim("roles", roles)
+                .claim("sid", sessionId.toString())   // the session (Day 66): ending it ends this token too
                 .build();
         JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
         String token = encoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();

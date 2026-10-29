@@ -9,6 +9,7 @@ import com.orudesk.orudesk.identity.domain.OrgUnitCodeTakenException;
 import com.orudesk.orudesk.identity.domain.OrgUnitNotFoundException;
 import com.orudesk.orudesk.identity.domain.RoleChangeNotAllowedException;
 import com.orudesk.orudesk.identity.domain.SelfLockoutException;
+import com.orudesk.orudesk.identity.domain.SessionNotFoundException;
 import com.orudesk.orudesk.identity.domain.TooManyLoginAttemptsException;
 import com.orudesk.orudesk.identity.domain.UnknownRoleException;
 import com.orudesk.orudesk.identity.domain.UserNotFoundException;
@@ -31,6 +32,11 @@ class IdentityExceptionHandler {
     @ExceptionHandler(UserNotFoundException.class)
     ProblemDetail userNotFound(UserNotFoundException e) {
         return problem(HttpStatus.NOT_FOUND, "User not found", e.getMessage());
+    }
+
+    @ExceptionHandler(SessionNotFoundException.class)
+    ProblemDetail sessionNotFound(SessionNotFoundException e) {
+        return problem(HttpStatus.NOT_FOUND, "Session not found", e.getMessage());
     }
 
     @ExceptionHandler(UnknownRoleException.class)
