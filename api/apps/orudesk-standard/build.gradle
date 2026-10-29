@@ -12,7 +12,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     runtimeOnly 'io.micrometer:micrometer-registry-prometheus'   // /actuator/prometheus, in Prometheus's format
     implementation 'org.flywaydb:flyway-database-postgresql'
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.0'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1'
     runtimeOnly 'org.postgresql:postgresql'
 
     testImplementation testFixtures(project(':platform:orudesk-platform-core'))
