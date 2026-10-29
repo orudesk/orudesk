@@ -17,6 +17,10 @@ dependencies {
     // Only the annotations (@Operation, @Tag) that describe endpoints in the OpenAPI contract. Same version
     // as springdoc in the app uses; springdoc itself stays in the app.
     api 'io.swagger.core.v3:swagger-annotations-jakarta:2.2.55'
+    // The event publication registry (Day 51): an event for an @ApplicationModuleListener is written to the
+    // event_publication table in the publisher's transaction, and marked complete when the listener succeeds
+    api platform('org.springframework.modulith:spring-modulith-bom:2.1.2')
+    api 'org.springframework.modulith:spring-modulith-starter-jdbc'
     // RecordNullabilityModelConverter plugs into springdoc's schema generation. compileOnly: it's used only
     // when an app has springdoc (which brings swagger-core), and the converter's configuration checks that.
     compileOnly 'io.swagger.core.v3:swagger-core-jakarta:2.2.55'

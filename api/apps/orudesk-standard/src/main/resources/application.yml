@@ -64,6 +64,9 @@ orudesk:
       # After this many failed logins for one email, that email is blocked until `window` after the first failure
       max-failures: ${ORUDESK_LOGIN_MAX_FAILURES:5}
       window: ${ORUDESK_LOGIN_WINDOW:15m}
+  events:
+    # The outbox (Day 51): completed event publications stay this long ("did the email go out?"), then go
+    keep-completed: ${ORUDESK_EVENTS_KEEP_COMPLETED:7d}
   metrics:
     # The secret Prometheus sends to read /actuator/prometheus (at least 32 characters). Empty: nobody can.
     token: ${ORUDESK_METRICS_TOKEN:}

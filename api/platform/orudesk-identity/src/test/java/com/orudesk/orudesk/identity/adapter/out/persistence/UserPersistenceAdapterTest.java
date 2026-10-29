@@ -18,7 +18,9 @@ import com.orudesk.orudesk.TestcontainersConfiguration;
  * Runs against a PostgreSQL in Docker, started by TestcontainersConfiguration (Flyway creates the tables first).
  * Each test runs in a transaction that is rolled back at the end, so nothing is left behind.
  */
-@DataJpaTest
+// Only identity's migrations: platform-core's (the event table, Day 51) also sit under db/migration, and this
+// slice runs Spring Boot's single Flyway, not the per-module one
+@DataJpaTest(properties = "spring.flyway.locations=classpath:db/migration/identity")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({UserPersistenceAdapter.class, CurrentTenantResolver.class, TestcontainersConfiguration.class})
 class UserPersistenceAdapterTest {
