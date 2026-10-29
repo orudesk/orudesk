@@ -63,6 +63,8 @@ jobs:
             || { echo "::error::Run 'pnpm generate' in web/packages/api-client and commit."; exit 1; }
       - run: pnpm check
       - run: pnpm build
+      # The npm packages as an outside app gets them: packed, installed with npm, type-checked, tested, built
+      - run: pnpm test:packages
 
   # The Dockerfile is code too: build the image on every PR (without pushing) so a broken one is caught here,
   # not on release day.

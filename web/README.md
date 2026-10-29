@@ -51,6 +51,7 @@ API running in Docker Compose).
 pnpm check               # Prettier, ESLint, TypeScript and the Vitest tests: what CI runs
 pnpm build               # the production build, in apps/standard/dist
 pnpm format              # fix formatting
+pnpm test:packages       # pack web-core and api-client, and use them from an app outside the workspace
 ```
 
 ## End-to-end tests
