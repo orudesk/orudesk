@@ -1,6 +1,7 @@
 package com.orudesk.orudesk.identity.application.service;
 
 import com.orudesk.orudesk.identity.application.port.in.RegisterUserCommand;
+import com.orudesk.orudesk.identity.domain.BreachedPasswordException;
 import com.orudesk.orudesk.identity.domain.Email;
 import com.orudesk.orudesk.identity.domain.EmailAlreadyRegisteredException;
 import com.orudesk.orudesk.identity.domain.PasswordHash;
@@ -21,7 +22,8 @@ class RegisterUserServiceTest {
 
     private final InMemoryUserStore store = new InMemoryUserStore();
     private final RegisterUserService service =
-            new RegisterUserService(store, store, raw -> new PasswordHash("hashed:" + raw), event -> { });
+            new RegisterUserService(store, store, raw -> new PasswordHash("hashed:" + raw),
+                    raw -> raw.equals("password123"), event -> { });
 
     @Test
     void registersAUserWithAHashedPasswordAndTheUserRole() {
@@ -40,6 +42,15 @@ class RegisterUserServiceTest {
         assertThatThrownBy(() -> service.register(
                 new RegisterUserCommand(DEMO, new Email("KARTHIKEYAN@orudesk.com"), "another-password")))
                 .isInstanceOf(EmailAlreadyRegisteredException.class);
+    }
+
+    @Test
+    void rejectsAPasswordKnownFromBreaches() {
+        assertThatThrownBy(() -> service.register(
+                new RegisterUserCommand(DEMO, new Email("karthikeyan@orudesk.com"), "password123")))
+                .isInstanceOf(BreachedPasswordException.class)
+                .satisfies(e -> assertThat(((BreachedPasswordException) e).field()).isEqualTo("password"));
+        assertThat(store.existsByEmail(new Email("karthikeyan@orudesk.com"))).isFalse();
     }
 
     @Test

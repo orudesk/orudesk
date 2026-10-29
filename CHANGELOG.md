@@ -8,6 +8,12 @@ Every release of the Orudesk core, newest first. The format follows
 
 ### Added
 
+- `POST /api/v1/users/me/password` changes the user's own password (current one required) and signs out every
+  other session; audited.
+- New passwords (registration, reset, change) are checked against Have I Been Pwned's breached passwords with
+  k-anonymity: only the first five characters of the SHA-1 hash leave the server. A breached password is a 400
+  field error. If the service can't be reached the password is allowed. `ORUDESK_BREACHED_PASSWORD_CHECK=false`
+  turns the check off.
 - The login's second step: for a user with two-factor sign-in on, `POST /api/v1/auth/login` answers 401
   "Second factor required" with a `loginToken` (valid 5 minutes, `orudesk.security.login.second-step-ttl`), and
   `POST /api/v1/auth/login/two-factor` with that token and a code from the app, or a recovery code, returns the

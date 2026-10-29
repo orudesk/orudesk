@@ -32,7 +32,7 @@ class PasswordResetServiceTest {
     private final InMemoryLoginAttemptLimiter loginAttempts = new InMemoryLoginAttemptLimiter();
     private final List<Object> events = new ArrayList<>();
     private final PasswordResetService service = new PasswordResetService(users, users, raw -> new PasswordHash("hashed:" + raw),
-            resetTokens, refreshTokens, loginAttempts, events::add, Clock.fixed(Instant.parse("2026-10-29T10:00:00Z"), ZoneOffset.UTC));
+            resetTokens, refreshTokens, loginAttempts, raw -> false, events::add, Clock.fixed(Instant.parse("2026-10-29T10:00:00Z"), ZoneOffset.UTC));
 
     private User user;
 

@@ -1,5 +1,6 @@
 package com.orudesk.orudesk.identity.adapter.in.web;
 
+import com.orudesk.orudesk.identity.domain.BreachedPasswordException;
 import com.orudesk.orudesk.identity.domain.EmailAlreadyRegisteredException;
 import com.orudesk.orudesk.identity.domain.InvalidCredentialsException;
 import com.orudesk.orudesk.identity.domain.InvalidPasswordResetTokenException;
@@ -54,6 +55,12 @@ class IdentityExceptionHandler {
     @ExceptionHandler(WrongPasswordException.class)
     ProblemDetail wrongPassword(WrongPasswordException e) {
         return fieldError("password", "That's not your current password");
+    }
+
+    @ExceptionHandler(BreachedPasswordException.class)
+    ProblemDetail breachedPassword(BreachedPasswordException e) {
+        return fieldError(e.field(), "This password has appeared in a data breach, so attackers try it first. "
+                + "Choose another");
     }
 
     @ExceptionHandler(WrongTwoFactorCodeException.class)

@@ -70,6 +70,7 @@ services:
       LOGGING_STRUCTURED_FORMAT_CONSOLE: ${ORUDESK_LOG_FORMAT:-ecs}
       ORUDESK_METRICS_TOKEN: ${ORUDESK_METRICS_TOKEN:-}   # lets Prometheus read /actuator/prometheus
       ORUDESK_MFA_KEY: ${ORUDESK_MFA_KEY:-}               # two-factor sign-in; empty: not offered
+      ORUDESK_BREACHED_PASSWORD_CHECK: ${ORUDESK_BREACHED_PASSWORD_CHECK:-true}   # false: no internet access
       # Email (Day 52): Mailpit unless you name your own SMTP server; links in emails point at the web app
       SPRING_MAIL_HOST: ${ORUDESK_MAIL_HOST:-mailpit}
       SPRING_MAIL_PORT: ${ORUDESK_MAIL_PORT:-1025}

@@ -609,6 +609,28 @@
         "tags" : [ "Users" ]
       }
     },
+    "/api/v1/users/me/password" : {
+      "post" : {
+        "operationId" : "changeMyPassword",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ChangePasswordRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "Changed"
+          }
+        },
+        "summary" : "Change the password; every other session is signed out",
+        "tags" : [ "Users" ]
+      }
+    },
     "/api/v1/users/me/sessions" : {
       "get" : {
         "operationId" : "listMySessions",
@@ -1002,6 +1024,22 @@
           }
         },
         "required" : [ "items" ]
+      },
+      "ChangePasswordRequest" : {
+        "type" : "object",
+        "properties" : {
+          "newPassword" : {
+            "type" : "string",
+            "maxLength" : 72,
+            "minLength" : 8
+          },
+          "password" : {
+            "type" : "string",
+            "maxLength" : 72,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "newPassword", "password" ]
       },
       "CodeRequest" : {
         "type" : "object",

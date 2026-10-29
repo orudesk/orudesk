@@ -282,6 +282,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/v1/users/me/password': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Change the password; every other session is signed out */
+    post: operations['changeMyPassword'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/v1/users/me/sessions': {
     parameters: {
       query?: never;
@@ -525,6 +542,10 @@ export interface components {
     AuditPage: {
       items: components['schemas']['AuditEntryDetails'][];
       nextCursor?: string | null;
+    };
+    ChangePasswordRequest: {
+      newPassword: string;
+      password: string;
     };
     CodeRequest: {
       code: string;
@@ -1140,6 +1161,28 @@ export interface operations {
         content: {
           'application/json': components['schemas']['UserProfile'];
         };
+      };
+    };
+  };
+  changeMyPassword: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ChangePasswordRequest'];
+      };
+    };
+    responses: {
+      /** @description Changed */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
     };
   };

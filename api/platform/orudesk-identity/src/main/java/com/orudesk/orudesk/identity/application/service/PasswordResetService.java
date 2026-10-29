@@ -3,12 +3,14 @@ package com.orudesk.orudesk.identity.application.service;
 import com.orudesk.orudesk.identity.application.port.in.PasswordChanged;
 import com.orudesk.orudesk.identity.application.port.in.PasswordResetRequested;
 import com.orudesk.orudesk.identity.application.port.in.PasswordResetUseCase;
+import com.orudesk.orudesk.identity.application.port.out.BreachedPasswords;
 import com.orudesk.orudesk.identity.application.port.out.LoadUserPort;
 import com.orudesk.orudesk.identity.application.port.out.LoginAttemptLimiter;
 import com.orudesk.orudesk.identity.application.port.out.PasswordHasher;
 import com.orudesk.orudesk.identity.application.port.out.PasswordResetTokens;
 import com.orudesk.orudesk.identity.application.port.out.RefreshTokenStore;
 import com.orudesk.orudesk.identity.application.port.out.SaveUserPort;
+import com.orudesk.orudesk.identity.domain.BreachedPasswordException;
 import com.orudesk.orudesk.identity.domain.Email;
 import com.orudesk.orudesk.identity.domain.InvalidPasswordResetTokenException;
 import com.orudesk.orudesk.identity.domain.User;
@@ -35,18 +37,21 @@ public class PasswordResetService implements PasswordResetUseCase {
     private final PasswordResetTokens resetTokens;
     private final RefreshTokenStore refreshTokens;
     private final LoginAttemptLimiter loginAttempts;
+    private final BreachedPasswords breachedPasswords;
     private final ApplicationEventPublisher events;
     private final Clock clock;
 
     public PasswordResetService(LoadUserPort loadUserPort, SaveUserPort saveUserPort, PasswordHasher passwordHasher,
                                 PasswordResetTokens resetTokens, RefreshTokenStore refreshTokens,
-                                LoginAttemptLimiter loginAttempts, ApplicationEventPublisher events, Clock clock) {
+                                LoginAttemptLimiter loginAttempts, BreachedPasswords breachedPasswords,
+                                ApplicationEventPublisher events, Clock clock) {
         this.loadUserPort = loadUserPort;
         this.saveUserPort = saveUserPort;
         this.passwordHasher = passwordHasher;
         this.resetTokens = resetTokens;
         this.refreshTokens = refreshTokens;
         this.loginAttempts = loginAttempts;
+        this.breachedPasswords = breachedPasswords;
         this.events = events;
         this.clock = clock;
     }
@@ -67,6 +72,10 @@ public class PasswordResetService implements PasswordResetUseCase {
 
     @Override
     public void resetPassword(String token, String newPassword) {
+        // Before the token is spent, so the user can try another password with the same link
+        if (breachedPasswords.isBreached(newPassword)) {
+            throw new BreachedPasswordException("newPassword");
+        }
         // One statement checks and spends the token; if anything below fails, the transaction gives it back
         UserId userId = resetTokens.consume(token, clock.instant()).orElseThrow(InvalidPasswordResetTokenException::new);
         User user = loadUserPort.findById(userId)

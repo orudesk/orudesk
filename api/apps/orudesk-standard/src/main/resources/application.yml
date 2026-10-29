@@ -82,6 +82,12 @@ orudesk:
       # After this many failed logins for one email, that email is blocked until `window` after the first failure
       max-failures: ${ORUDESK_LOGIN_MAX_FAILURES:5}
       window: ${ORUDESK_LOGIN_WINDOW:15m}
+      # How long the second step of a login (the authenticator code) may take (Day 68)
+      second-step-ttl: 5m
+    # New passwords are checked against Have I Been Pwned's breached passwords (Day 69). Only the first five
+    # characters of the password's SHA-1 are sent. Turn off for servers without internet access.
+    breached-passwords:
+      enabled: ${ORUDESK_BREACHED_PASSWORD_CHECK:true}
   events:
     # The outbox (Day 51): completed event publications stay this long ("did the email go out?"), then go
     keep-completed: ${ORUDESK_EVENTS_KEEP_COMPLETED:7d}
