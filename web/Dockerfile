@@ -3,7 +3,7 @@
 #   docker build --build-arg APP=standard -t ... web/          (APP picks the edition under apps/)
 
 # ---- Stage 1: build the app with Node ----
-FROM node:24-alpine AS build
+FROM node:26-alpine AS build
 WORKDIR /src
 RUN corepack enable
 # The lockfile and package.json files first, so Docker reuses the install layer until dependencies change.
