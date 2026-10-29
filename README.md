@@ -146,6 +146,14 @@ dependencies {
 The BOM also fixes the Spring Boot version the core was built and tested with. Releases are listed in
 [CHANGELOG.md](CHANGELOG.md).
 
+The web side comes from npm, with the same version as the core (from 1.2.0):
+
+```bash
+npm install @orudesk/web-core @orudesk/api-client
+```
+
+See [web-core's README](web/packages/web-core/README.md) for an edition's `main.tsx`.
+
 ## How it's built
 
 - **Java 25, Spring Boot 4**, PostgreSQL 17, Redis 7. Gradle, one module per feature.

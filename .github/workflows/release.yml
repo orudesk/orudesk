@@ -1,6 +1,7 @@
 # Runs when you push a tag like v0.1.0: tests, signs and uploads the core to Maven Central, then creates
 # the GitHub release with that version's CHANGELOG section. A second job pushes the standard edition's
-# Docker image to ghcr.io/orudesk/orudesk-standard, tagged with the version and "latest".
+# Docker image to ghcr.io/orudesk/orudesk-standard, tagged with the version and "latest". A third publishes
+# @orudesk/api-client and @orudesk/web-core to npm with the same version.
 name: Release
 
 on:
@@ -94,3 +95,56 @@ jobs:
             ghcr.io/orudesk/orudesk-standard-web:latest
           cache-from: type=gha,scope=web
           cache-to: type=gha,mode=max,scope=web
+
+  # The web packages, for the editions' web apps (Day 63). Independent of the Maven job: it checks the web
+  # itself, and a Maven Central problem shouldn't hold back the editions.
+  npm:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write   # npm trusted publishing: GitHub proves to npm which workflow is publishing; no stored token
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413   # v4.3.0
+        with:
+          package_json_file: web/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: web/.nvmrc
+          registry-url: https://registry.npmjs.org
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - run: npm install -g npm@11   # trusted publishing needs npm 11.5.1 or later
+      - run: pnpm install --frozen-lockfile
+
+      - name: Check the tag matches the core's version
+        working-directory: api
+        run: |
+          version=$(grep '^version=' gradle.properties | cut -d= -f2)
+          [ "v$version" = "$GITHUB_REF_NAME" ] || { echo "Tag $GITHUB_REF_NAME but gradle.properties says $version"; exit 1; }
+
+      - run: pnpm check
+
+      # package.json says 0.0.0 between releases: the tag is the one place the version is written
+      - name: Give the packages the release's version
+        run: |
+          for p in api-client web-core; do (cd "packages/$p" && npm pkg set version="${GITHUB_REF_NAME#v}"); done
+
+      - run: pnpm test:packages
+
+      # api-client first: web-core depends on it. A pre-release (1.2.0-rc.1) goes to the "next" dist-tag,
+      # so `npm install @orudesk/web-core` keeps giving the latest stable version.
+      - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}   # only for the very first publish; empty once trusted publishing is set up
+        run: |
+          case "$GITHUB_REF_NAME" in *-*) dist_tag=next ;; *) dist_tag=latest ;; esac
+          for p in api-client web-core; do
+            (cd "packages/$p" && pnpm pack --pack-destination "$RUNNER_TEMP/npm")
+          done
+          for p in api-client web-core; do
+            npm publish "$RUNNER_TEMP"/npm/orudesk-"$p"-*.tgz --access public --provenance --tag "$dist_tag"
+          done

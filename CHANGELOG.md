@@ -8,6 +8,9 @@ Every release of the Orudesk core, newest first. The format follows
 
 ### Added
 
+- The web packages are published to npm with each release, with the release's version:
+  `@orudesk/web-core` and `@orudesk/api-client`. An edition's web app can depend on them instead of checking
+  out the core next to itself.
 - Request ids: every response has an `X-Request-Id` (the caller's, if it sent a plain one of 8-64 characters,
   else a new UUID), and every log line written for the request carries it (`request_id`). The web app sends
   one with each request, and Caddy logs each request as JSON.
@@ -35,6 +38,8 @@ Every release of the Orudesk core, newest first. The format follows
 
 ### Changed
 
+- **web-core no longer imports CSS.** An app's `main.tsx` imports `@mantine/core/styles.css` and
+  `@orudesk/web-core/styles.css` itself (the editions are updated).
 - In Docker Compose the API logs JSON lines (Elastic Common Schema); `ORUDESK_LOG_FORMAT` picks another format.
 
 ## [1.1.0] - 2026-10-26
