@@ -1,0 +1,35 @@
+name: Mobile
+
+# The mobile build (Week 15): the shared module's tests on the JVM, and the Android app.
+# GitHub's Ubuntu runners come with the Android SDK; iOS needs a macOS runner and is not built here yet.
+on:
+  push:
+    branches: [main, 'claude/**']
+    paths: ['mobile/**', '.github/workflows/mobile.yml']
+  pull_request:
+    paths: ['mobile/**', '.github/workflows/mobile.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a   # v4.4.3: a third-party action, pinned to a commit
+      - run: ./gradlew :shared:jvmTest :androidApp:assembleDebug
+      - uses: actions/upload-artifact@v7
+        if: success()
+        with:
+          name: orudesk-debug-apk
+          path: mobile/androidApp/build/outputs/apk/debug/*.apk
+          retention-days: 7
