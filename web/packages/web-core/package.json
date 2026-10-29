@@ -1,16 +1,59 @@
 {
   "name": "@orudesk/web-core",
-  "private": true,
   "description": "The shell, sign-in, the unit switcher and the core's screens, shared by every edition's web app.",
   "license": "AGPL-3.0-only",
   "version": "0.0.0",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orudesk/orudesk.git",
+    "directory": "web/packages/web-core"
+  },
+  "homepage": "https://github.com/orudesk/orudesk/tree/main/web/packages/web-core#readme",
+  "keywords": [
+    "orudesk",
+    "erp",
+    "react",
+    "mantine"
+  ],
   "exports": {
     ".": "./src/index.ts",
     "./testing": "./src/testing.ts",
-    "./test-setup": "./src/test-setup.ts"
+    "./test-setup": "./src/test-setup.ts",
+    "./styles.css": "./src/styles.css"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "LICENSE"
+  ],
+  "sideEffects": [
+    "**/*.css",
+    "./dist/test-setup.js"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./testing": {
+        "types": "./dist/testing.d.ts",
+        "default": "./dist/testing.js"
+      },
+      "./test-setup": {
+        "types": "./dist/test-setup.d.ts",
+        "default": "./dist/test-setup.js"
+      },
+      "./styles.css": "./dist/styles.css"
+    }
   },
   "scripts": {
+    "build": "vite build -c vite.lib.config.ts && tsc -p tsconfig.build.json && cp src/styles.css dist/",
+    "prepack": "cp ../../../LICENSE .",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json"
   },
@@ -22,9 +65,23 @@
     "@mantine/core": "^9.7.4",
     "@mantine/hooks": "^9.7.4",
     "@tanstack/react-query": "^5.105.0",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "react-router": "^8.5.0"
+    "react-router": "^8.5.0",
+    "vitest": "^5.0.5"
+  },
+  "peerDependenciesMeta": {
+    "@testing-library/jest-dom": {
+      "optional": true
+    },
+    "@testing-library/react": {
+      "optional": true
+    },
+    "vitest": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@mantine/core": "^9.7.4",

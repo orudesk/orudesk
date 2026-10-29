@@ -1,5 +1,4 @@
 import { MantineProvider } from '@mantine/core';
-import '@mantine/core/styles.css';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router';
@@ -7,7 +6,6 @@ import { NavigationContext } from './layout/NavigationContext';
 import type { OrudeskModule } from './module';
 import { buildRoutes } from './routes';
 import type { Services } from './services';
-import './styles.css';
 import { theme } from './theme';
 import { ServicesContext } from './ServicesContext';
 

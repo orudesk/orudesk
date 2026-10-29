@@ -8,6 +8,14 @@ src/generated/schema.ts         ← TypeScript types, written by openapi-typescr
 src/index.ts                    ← createOrudeskClient(): openapi-fetch with those types
 ```
 
+## Install
+
+```bash
+npm install @orudesk/api-client
+```
+
+Its version is the Orudesk API version it was generated from.
+
 ```ts
 import { createOrudeskClient } from '@orudesk/api-client';
 
