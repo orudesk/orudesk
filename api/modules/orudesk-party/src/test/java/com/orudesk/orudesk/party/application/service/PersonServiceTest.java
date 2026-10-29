@@ -8,6 +8,7 @@ import com.orudesk.orudesk.party.application.port.in.PersonPage;
 import com.orudesk.orudesk.party.application.port.in.RegisterPersonCommand;
 import com.orudesk.orudesk.party.domain.PersonNotFoundException;
 import com.orudesk.orudesk.shared.EditConflictException;
+import com.orudesk.orudesk.shared.FieldChange;
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
@@ -95,7 +96,9 @@ class PersonServiceTest {
 
         assertThat(edited.version()).isEqualTo(1);
         assertThat(service.getPerson(id).phone()).isEqualTo("+91 98450 11111");
-        assertThat(events).containsExactly(new PersonEdited(id, "Asha Rao", List.of("phone", "email")));
+        assertThat(events).containsExactly(new PersonEdited(id, "Asha Rao", List.of(
+                FieldChange.of("phone", "+91 98450 00000", "+91 98450 11111"),
+                FieldChange.of("email", null, "asha@example.org"))));
     }
 
     @Test

@@ -8,6 +8,7 @@ import com.orudesk.orudesk.audit.application.port.out.AuditEntryStore;
 import com.orudesk.orudesk.audit.application.port.out.AuditPosition;
 import com.orudesk.orudesk.audit.domain.AuditEntry;
 import com.orudesk.orudesk.shared.AuditableEvent;
+import com.orudesk.orudesk.shared.FieldChange;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
@@ -72,6 +73,24 @@ class AuditServiceTest {
         assertThat(entry.requestId()).isEqualTo("req-12345678");
         // PostgreSQL keeps microseconds, so we do too: a cursor from a stored row must match it exactly
         assertThat(entry.occurredAt()).isEqualTo(Instant.parse("2026-10-26T10:00:00.123456Z"));
+    }
+
+    private record Edited(UUID subjectId, List<FieldChange> changes) implements AuditableEvent {
+        @Override public String action() { return "test.thing.edited"; }
+        @Override public String subjectType() { return "thing"; }
+        @Override public String summary() { return "Edited a thing"; }
+    }
+
+    @Test
+    void anEditsFieldChangesAreKeptAndListedInOrder() {
+        UUID thing = UUID.randomUUID();
+        List<FieldChange> changes = List.of(FieldChange.of("phone", "1", "2"), FieldChange.hidden("pan"));
+
+        service.record(new Edited(thing, changes), TENANT, ANNA, null);
+        service.record(new Happened(thing, "Did a thing"), TENANT, ANNA, null);
+
+        List<AuditEntryDetails> items = service.list(new AuditSearch(thing, null, 10)).items();
+        assertThat(items).extracting(AuditEntryDetails::changes).containsExactlyInAnyOrder(changes, List.of());
     }
 
     @Test

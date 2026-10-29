@@ -20,13 +20,14 @@ import com.orudesk.orudesk.party.domain.PersonId;
 import com.orudesk.orudesk.party.domain.PersonName;
 import com.orudesk.orudesk.party.domain.PersonNotFoundException;
 import com.orudesk.orudesk.shared.EditConflictException;
+import com.orudesk.orudesk.shared.FieldChange;
+import com.orudesk.orudesk.shared.FieldChanges;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -75,24 +76,20 @@ public class PersonService implements RegisterPersonUseCase, EditPersonUseCase, 
                 command.dateOfBirth(), command.phone(), command.email(),
                 LocalDate.now(clock));
 
-        List<String> changedFields = changedFields(current, changed);
-        if (changedFields.isEmpty()) {
+        List<FieldChange> changes = new FieldChanges()
+                .compare("firstName", current.name().first(), changed.name().first())
+                .compare("lastName", current.name().last(), changed.name().last())
+                .compare("dateOfBirth", current.dateOfBirth(), changed.dateOfBirth())
+                .compare("phone", current.phone(), changed.phone())
+                .compare("email", current.email(), changed.email())
+                .list();
+        if (changes.isEmpty()) {
             return toDetails(current);   // nothing to save, nothing to audit, and the version stays
         }
         long newVersion = savePersonPort.update(changed);
-        events.publishEvent(new PersonEdited(id.value(), fullName(changed), changedFields));
+        events.publishEvent(new PersonEdited(id.value(), fullName(changed), changes));
         return toDetails(Person.restore(changed.id(), changed.name(), changed.dateOfBirth().orElse(null),
                 changed.phone().orElse(null), changed.email().orElse(null), newVersion));
-    }
-
-    private static List<String> changedFields(Person before, Person after) {
-        List<String> fields = new ArrayList<>();
-        if (!before.name().first().equals(after.name().first())) fields.add("firstName");
-        if (!before.name().last().equals(after.name().last())) fields.add("lastName");
-        if (!before.dateOfBirth().equals(after.dateOfBirth())) fields.add("dateOfBirth");
-        if (!before.phone().equals(after.phone())) fields.add("phone");
-        if (!before.email().equals(after.email())) fields.add("email");
-        return fields;
     }
 
     private static String fullName(Person person) {

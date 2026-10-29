@@ -2,6 +2,7 @@ package com.orudesk.orudesk.shared;
 
 import org.jspecify.annotations.Nullable;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -32,5 +33,13 @@ public interface AuditableEvent {
      */
     default @Nullable UUID tenantId() {
         return null;
+    }
+
+    /**
+     * For an edit: which fields changed, from what to what (Day 47). Empty for events that aren't edits (a
+     * registration, a role given), where the summary says it all.
+     */
+    default List<FieldChange> changes() {
+        return List.of();
     }
 }

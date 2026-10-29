@@ -37,7 +37,7 @@ public class AuditService implements RecordAuditEntryUseCase, AuditTrailQuery {
                 // PostgreSQL keeps microseconds; cutting here means the cursor matches what's stored
                 clock.instant().truncatedTo(ChronoUnit.MICROS),
                 actor.id(), actor.email(), event.action(), event.subjectType(), event.subjectId(),
-                event.summary(), requestId));
+                event.summary(), requestId, event.changes()));
     }
 
     @Override
@@ -53,6 +53,7 @@ public class AuditService implements RecordAuditEntryUseCase, AuditTrailQuery {
 
     private static AuditEntryDetails toDetails(AuditEntry entry) {
         return new AuditEntryDetails(entry.id(), entry.occurredAt(), entry.actorId(), entry.actorEmail(),
-                entry.action(), entry.subjectType(), entry.subjectId(), entry.summary(), entry.requestId());
+                entry.action(), entry.subjectType(), entry.subjectId(), entry.summary(), entry.requestId(),
+                entry.changes());
     }
 }

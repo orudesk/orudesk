@@ -152,9 +152,15 @@ class PeopleIntegrationTest {
 
         assertThat(jdbc.queryForObject("SELECT phone FROM party_person WHERE id = ?", String.class, UUID.fromString(id)))
                 .isEqualTo("+91 98450 11111");
-        assertThat(jdbc.queryForObject("SELECT summary FROM audit_entry WHERE subject_id = ? AND action = 'party.person.edited'",
-                String.class, UUID.fromString(id)))
-                .isEqualTo("Changed dateOfBirth, phone of Asha Test-Rao");
+        // The audit log says who changed what, from what to what (Day 47)
+        mockMvc.perform(get("/api/v1/audit-entries").param("subjectId", id).header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].summary").value("Changed dateOfBirth, phone of Asha Test-Rao"))
+                .andExpect(jsonPath("$.items[0].changes[0].field").value("dateOfBirth"))
+                .andExpect(jsonPath("$.items[0].changes[0].before").value("1990-04-23"))
+                .andExpect(jsonPath("$.items[0].changes[0].after").value(nullValue()))
+                .andExpect(jsonPath("$.items[1].action").value("party.person.registered"))
+                .andExpect(jsonPath("$.items[1].changes").isEmpty());
     }
 
     @Test

@@ -1,15 +1,23 @@
 package com.orudesk.orudesk.audit.adapter.out.persistence;
 
 import com.orudesk.orudesk.audit.domain.AuditEntry;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Immutable;
 import org.hibernate.annotations.TenantId;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /** One row of audit_entry. @Immutable: Hibernate never sends an UPDATE for it (the database would refuse). */
 @Entity
@@ -48,6 +56,14 @@ class AuditEntryJpaEntity {
     @Column(name = "request_id", length = 64)
     private String requestId;
 
+    // The fields an edit changed (Day 47), in their own table. Loaded for a whole page of entries in one query
+    // (BatchSize), not one query per entry. Most entries have none.
+    @ElementCollection
+    @CollectionTable(name = "audit_entry_change", joinColumns = @JoinColumn(name = "entry_id"))
+    @OrderColumn(name = "position")
+    @BatchSize(size = 100)
+    private List<FieldChangeEmbeddable> changes = new ArrayList<>();
+
     protected AuditEntryJpaEntity() {
         // JPA needs a no-argument constructor
     }
@@ -64,11 +80,12 @@ class AuditEntryJpaEntity {
         row.subjectId = entry.subjectId();
         row.summary = entry.summary();
         row.requestId = entry.requestId();
+        row.changes = entry.changes().stream().map(FieldChangeEmbeddable::from).collect(Collectors.toCollection(ArrayList::new));
         return row;
     }
 
     AuditEntry toDomain() {
         return new AuditEntry(id, tenantId, occurredAt, actorId, actorEmail, action, subjectType, subjectId,
-                summary, requestId);
+                summary, requestId, changes.stream().map(FieldChangeEmbeddable::toDomain).toList());
     }
 }

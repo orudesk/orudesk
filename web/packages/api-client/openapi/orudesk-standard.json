@@ -620,6 +620,12 @@
             "type" : [ "string", "null" ],
             "format" : "uuid"
           },
+          "changes" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/FieldChange"
+            }
+          },
           "id" : {
             "type" : "string",
             "format" : "uuid"
@@ -642,7 +648,7 @@
             "type" : "string"
           }
         },
-        "required" : [ "action", "id", "occurredAt", "subjectId", "subjectType", "summary" ]
+        "required" : [ "action", "changes", "id", "occurredAt", "subjectId", "subjectType", "summary" ]
       },
       "AuditPage" : {
         "type" : "object",
@@ -729,6 +735,24 @@
           }
         },
         "required" : [ "firstName", "lastName", "version" ]
+      },
+      "FieldChange" : {
+        "type" : "object",
+        "properties" : {
+          "after" : {
+            "type" : [ "string", "null" ]
+          },
+          "before" : {
+            "type" : [ "string", "null" ]
+          },
+          "field" : {
+            "type" : "string"
+          },
+          "valuesHidden" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "field", "valuesHidden" ]
       },
       "Grant" : {
         "type" : "object",

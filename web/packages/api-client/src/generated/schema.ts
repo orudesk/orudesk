@@ -279,6 +279,7 @@ export interface components {
       actorEmail?: string | null;
       /** Format: uuid */
       actorId?: string | null;
+      changes: components['schemas']['FieldChange'][];
       /** Format: uuid */
       id: string;
       /** Format: date-time */
@@ -314,6 +315,12 @@ export interface components {
       phone?: string | null;
       /** Format: int64 */
       version: number;
+    };
+    FieldChange: {
+      after?: string | null;
+      before?: string | null;
+      field: string;
+      valuesHidden: boolean;
     };
     Grant: {
       /** Format: uuid */
