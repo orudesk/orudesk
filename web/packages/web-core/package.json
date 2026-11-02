@@ -59,7 +59,7 @@
   },
   "dependencies": {
     "@orudesk/api-client": "workspace:*",
-    "@tabler/icons-react": "^3.49.0",
+    "@tabler/icons-react": "^3.50.0",
     "qrcode": "^1.5.4"
   },
   "peerDependencies": {
