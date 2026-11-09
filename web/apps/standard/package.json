@@ -13,7 +13,7 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@mantine/core": "^9.7.4",
+    "@mantine/core": "^9.7.5",
     "@mantine/hooks": "^9.7.4",
     "@orudesk/web-core": "workspace:*",
     "@tanstack/react-query": "^5.105.0",
