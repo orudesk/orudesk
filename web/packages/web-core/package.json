@@ -63,7 +63,7 @@
     "qrcode": "^1.5.4"
   },
   "peerDependencies": {
-    "@mantine/core": "^9.7.4",
+    "@mantine/core": "^9.7.5",
     "@mantine/hooks": "^9.7.4",
     "@tanstack/react-query": "^5.105.0",
     "@testing-library/jest-dom": "^7.0.1",
@@ -85,7 +85,7 @@
     }
   },
   "devDependencies": {
-    "@mantine/core": "^9.7.4",
+    "@mantine/core": "^9.7.5",
     "@mantine/hooks": "^9.7.4",
     "@tanstack/react-query": "^5.105.0",
     "@testing-library/jest-dom": "^7.0.1",
