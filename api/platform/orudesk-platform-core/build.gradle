@@ -27,7 +27,7 @@ dependencies {
     implementation 'io.micrometer:micrometer-core'
     // RecordNullabilityModelConverter plugs into springdoc's schema generation. compileOnly: it's used only
     // when an app has springdoc (which brings swagger-core), and the converter's configuration checks that.
-    compileOnly 'io.swagger.core.v3:swagger-core-jakarta:2.2.55'
+    compileOnly 'io.swagger.core.v3:swagger-core-jakarta:2.2.56'
 
     def springBoot = platform(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
     testFixturesImplementation springBoot
